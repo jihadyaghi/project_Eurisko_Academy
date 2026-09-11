@@ -11,6 +11,7 @@ model ServiceRequest {
   id            Int   @id @default(autoincrement())
   employeeId    Int
   departmentId  Int
+  handlerId     Int?
   title         String
   description   String
   status        String

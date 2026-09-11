@@ -14,6 +14,6 @@ export class ServiceRequestsController {
     }
     @Patch(':id/status')
     transitionStatus(@Param('id', ParseIntPipe) id: number, @Body() body: TransitionRequestDto) {
-        return this.serviceRequestsService.transitionStatus(id, body.status);
+        return this.serviceRequestsService.transitionStatus(id, body.status, body.handlerId);
     }
 }

@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {BadRequestException, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import {Service_Requests} from './service-requests.data';
 import {ServiceRequestStatus} from './enum/service-request-status.enum';
 import {PrismaService} from '../prisma/prisma.service';
@@ -18,8 +18,11 @@ export class ServiceRequestsService {
         }
         return request;
     }
-    async transitionStatus(id: number, targetStatus: ServiceRequestStatus) {
+    async transitionStatus(id: number, targetStatus: ServiceRequestStatus, handlerId: number) {
         const request = await this.findOne(id);
+        if (request.handlerId !== handlerId) {
+            throw new ForbiddenException('Only the assigned handler can change this Service Request status');
+        }
         const validTransitions: Record<ServiceRequestStatus, ServiceRequestStatus[]> = {
             [ServiceRequestStatus.SUBMITTED]: [ServiceRequestStatus.IN_PROGRESS],
             [ServiceRequestStatus.IN_PROGRESS]: [ServiceRequestStatus.COMPLETED],
