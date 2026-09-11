@@ -1,31 +1,39 @@
 import {BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {Service_Requests} from './service-requests.data';
 import {ServiceRequestStatus} from './enum/service-request-status.enum';
+import {PrismaService} from '../prisma/prisma.service';
 
 @Injectable()
 export class ServiceRequestsService {
+    constructor(private readonly prisma: PrismaService) {}
     findAll() {
-        return Service_Requests;
+        return this.prisma.serviceRequest.findMany();
     }
-    findOne(id: number) {
-        const request = Service_Requests.find((item) => item.id === id);
+    async findOne(id: number) {
+        const request = await this.prisma.serviceRequest.findUnique({
+            where: { id },
+        })
         if (!request){
             throw new NotFoundException(`Service request with id ${id} not found`);
         }
         return request;
     }
-    transitionStatus(id: number, targetStatus: ServiceRequestStatus) {
-        const request = this.findOne(id);
+    async transitionStatus(id: number, targetStatus: ServiceRequestStatus) {
+        const request = await this.findOne(id);
         const validTransitions: Record<ServiceRequestStatus, ServiceRequestStatus[]> = {
             [ServiceRequestStatus.SUBMITTED]: [ServiceRequestStatus.IN_PROGRESS],
             [ServiceRequestStatus.IN_PROGRESS]: [ServiceRequestStatus.COMPLETED],
             [ServiceRequestStatus.COMPLETED]: []
         };
-        const allowedNestStatuses = validTransitions[request.status];
+        const currentStatus = request.status as ServiceRequestStatus;
+        const allowedNestStatuses = validTransitions[currentStatus];
         if (!allowedNestStatuses.includes(targetStatus)) {
             throw new BadRequestException(`Invalid status transition from ${request.status} to ${targetStatus}`);
         };
-        request.status = targetStatus;
-        return request;
+        const updatedRequest = await this.prisma.serviceRequest.update({
+            where: {id},
+            data: {status: targetStatus}
+        });
+        return updatedRequest;
     }
 }

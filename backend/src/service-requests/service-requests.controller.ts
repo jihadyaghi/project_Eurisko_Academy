@@ -1,6 +1,6 @@
 import {Body, Controller, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import {ServiceRequestsService} from './service-requests.service';
-import {ServiceRequestStatus} from './enum/service-request-status.enum';
+import {TransitionRequestDto} from './dto/transition-request.dto';
 @Controller('service-requests')
 export class ServiceRequestsController {
     constructor(private readonly serviceRequestsService: ServiceRequestsService) {}
@@ -13,7 +13,7 @@ export class ServiceRequestsController {
         return this.serviceRequestsService.findOne(id);
     }
     @Patch(':id/status')
-    transitionStatus(@Param('id', ParseIntPipe) id: number, @Body('status') status: ServiceRequestStatus) {
-        return this.serviceRequestsService.transitionStatus(id, status);
+    transitionStatus(@Param('id', ParseIntPipe) id: number, @Body() body: TransitionRequestDto) {
+        return this.serviceRequestsService.transitionStatus(id, body.status);
     }
 }
