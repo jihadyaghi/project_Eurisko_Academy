@@ -40,4 +40,30 @@ describe('ServiceRequestsService', ()=>{
     ).rejects.toThrow(BadRequestException);
     expect(prismaMock.serviceRequest.update).not.toHaveBeenCalled();
   });
+  it('should allow in submitted -> in progress transition', async ()=> {
+    prismaMock.serviceRequest.findUnique.mockResolvedValue({
+      id: 1,
+      employeeId: 101,
+      departmentId: 1,
+      handlerId: 201,
+      title: 'Laptop Issue',
+      description: 'My laptop is not turning on.',
+      status: ServiceRequestStatus.SUBMITTED,
+    });
+    prismaMock.serviceRequest.update.mockResolvedValue({
+      id: 1,
+      employeeId: 101,
+      departmentId: 1,
+      handlerId: 201,
+      title: 'Laptop Issue',
+      description: 'My laptop is not turning on.',
+      status: ServiceRequestStatus.IN_PROGRESS,
+    });
+    const result = await service.transitionStatus(1, ServiceRequestStatus.IN_PROGRESS, 201);
+    expect(result.status).toBe(ServiceRequestStatus.IN_PROGRESS);
+    expect(prismaMock.serviceRequest.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { status: ServiceRequestStatus.IN_PROGRESS }
+    });
+  })
 });
