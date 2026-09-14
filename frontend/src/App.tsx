@@ -27,6 +27,7 @@ function App() {
       },
       body: JSON.stringify({
         status: 'in_progress',
+        handlerId: 201,
       }),
     },
   );
@@ -48,6 +49,7 @@ const completeRequest = async () => {
       },
       body: JSON.stringify({
         status: 'completed',
+        handlerId: 201,
       }),
     },
   );
@@ -60,11 +62,12 @@ const completeRequest = async () => {
   setRequest(data);
 };
   if (!request) {
-    return <div>Loading...</div>
+    return <div className="loading">Loading...</div>
   }
   return (
-    <div>
+    <div className="service-request-card">
       <h1>Service Request</h1>
+      <div className="request-info">
       <p>
         <strong>Title:</strong> {request.title}
       </p>
@@ -74,10 +77,14 @@ const completeRequest = async () => {
       <p>
         <strong>Status:</strong> {request.status}
       </p>
-      <button onClick={startProgress}>Start Progress</button>
-      <button onClick={completeRequest}>Complete Request</button>
+    </div>
+      <div className="actions">
+        <button className="start-button" onClick={startProgress}>Start Progress</button>
+        <button className="complete-button" onClick={completeRequest}>Complete Request</button>
+      </div>
+      
       {error && (
-      <p>
+      <p className="error-message">
        <strong>Error:</strong> {error}
       </p>
 )}
