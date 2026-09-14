@@ -130,6 +130,10 @@ Start the NestJS backend:
 ```bash
 npm run start:dev
 ```
+Seed the development database with sample data:
+```bash
+npm run db:seed
+```
 The backend runs by default at:
 ```text
 http://localhost:3000
