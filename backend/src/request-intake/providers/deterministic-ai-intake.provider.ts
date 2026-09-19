@@ -13,7 +13,8 @@ export class DeterministicAiIntakeProvider implements AiIntakeProvider {
                 department: IntakeDepartment.IT,
                 category: normalizedText.includes('access') ? IntakeCategory.ACCESS : normalizedText.includes('software') ? IntakeCategory.SOFTWARE : IntakeCategory.HARDWARE,
                 priority: normalizedText.includes('urgent') || normalizedText.includes('client meeting') || normalizedText.includes('cannot work') ? IntakePriority.HIGH : IntakePriority.NORMAL,
-                summary: text.trim()
+                summary: text.trim(),
+                needsReview: false
             };
         }
         if (normalizedText.includes('employment letter') || normalizedText.includes('leave') || normalizedText.includes('employee')){
@@ -21,7 +22,8 @@ export class DeterministicAiIntakeProvider implements AiIntakeProvider {
                 department: IntakeDepartment.HR,
                 category: normalizedText.includes('leave') ? IntakeCategory.LEAVE : normalizedText.includes('employment letter') ? IntakeCategory.EMPLOYMENT_DOCUMENTS : IntakeCategory.EMPLOYEE_SUPPORT,
                 priority: IntakePriority.NORMAL,
-                summary: text.trim()
+                summary: text.trim(),
+                needsReview: false
             };
         }
         if (normalizedText.includes('reimbursement') || normalizedText.includes('payroll') || normalizedText.includes('expense')){
@@ -29,14 +31,16 @@ export class DeterministicAiIntakeProvider implements AiIntakeProvider {
                 department: IntakeDepartment.FINANCE,
                 category: normalizedText.includes('payroll') ? IntakeCategory.PAYROLL : normalizedText.includes('reimbursement') ? IntakeCategory.REIMBURSEMENT : IntakeCategory.EXPENSE,
                 priority: IntakePriority.NORMAL,
-                summary: text.trim()
+                summary: text.trim(),
+                needsReview: false
             };
         }
         return {
-            department: IntakeDepartment.IT,
-            category: IntakeCategory.SOFTWARE,
+            department: null,
+            category: null,
             priority: IntakePriority.NORMAL,
-            summary: text.trim()
+            summary: text.trim(),
+            needsReview: true
         }
     }
 }

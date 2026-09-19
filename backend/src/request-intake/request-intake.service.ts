@@ -21,20 +21,27 @@ export class RequestIntakeService {
         }
     }
     private validateCandidate(candidate: IntakeResultDto): void {
-        const validDepartments = Object.values(IntakeDepartment);
-        const validCategories = Object.values(IntakeCategory);
-        const validPriorities = Object.values(IntakePriority);
-        if (!validDepartments.includes(candidate.department)){
-            throw new BadGatewayException('AI provider returned an invalid department');
-        }
-        if (!validCategories.includes(candidate.category)){
-            throw new BadGatewayException('AI provider returned an invalid category');
-        }
-        if (!validPriorities.includes(candidate.priority)){
-            throw new BadGatewayException('AI provider returned an invalid priority');
-        }
-        if (!candidate.summary?.trim()){
-            throw new BadGatewayException('AI provider returned an invalid summary')
-        }
+
+      const validDepartments = Object.values(IntakeDepartment);
+      const validCategories = Object.values(IntakeCategory);
+      const validPriorities = Object.values(IntakePriority);
+      if (!validPriorities.includes(candidate.priority)) {
+       throw new BadGatewayException('AI provider returned an invalid priority',);
+      }
+      if (!candidate.summary?.trim()) {
+       throw new BadGatewayException('AI provider returned an invalid summary',);
+      }
+      if (candidate.needsReview) {
+      if (candidate.department !== null || candidate.category !== null) {
+       throw new BadGatewayException('AI provider returned an invalid review candidate',);
+      }
+      return;
+     }  
+     if (candidate.department === null || !validDepartments.includes(candidate.department)) {
+      throw new BadGatewayException('AI provider returned an invalid department',);
+     }
+     if (candidate.category === null || !validCategories.includes(candidate.category)) {
+      throw new BadGatewayException('AI provider returned an invalid category',);
+     }  
     }
 }
