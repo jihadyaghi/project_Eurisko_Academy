@@ -23,5 +23,18 @@ describe('RequestIntakeService', () => {
     };
     const service = new RequestIntakeService(failingProvider as any);
     await expect(service.analyze('I need help')).rejects.toThrow('AI assistance is temporarily unavailable')
+  });
+  it('should reject a category that does not match the department', async () => {
+    const fakeProvider = {
+      analyze: async () => ({
+        department: 'HR',
+        category: 'hardware',
+        priority: 'normal',
+        summary: 'Mismatch between department and category',
+        needsReview: false,
+      }),
+    };
+    const service = new RequestIntakeService(fakeProvider as any);
+    await expect(service.analyze('I need help')).rejects.toThrow('AI provider returned a category that does not match the department')
   })
 })

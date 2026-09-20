@@ -1,6 +1,5 @@
 import { BadGatewayException, Injectable, Inject } from '@nestjs/common';
 import { IntakeResultDto } from './dto/intake-result.dto';
-import { DeterministicAiIntakeProvider } from './providers/deterministic-ai-intake.provider';
 import { IntakeDepartment } from './enums/intake-department.enum';
 import { IntakeCategory } from './enums/intake-category.enum';
 import { IntakePriority } from './enums/intake-priority.enum';
@@ -45,6 +44,27 @@ export class RequestIntakeService {
      }
      if (candidate.category === null || !validCategories.includes(candidate.category)) {
       throw new BadGatewayException('AI provider returned an invalid category',);
-     }  
+     }
+     const allowedCategoriesByDepartment: Record<IntakeDepartment, IntakeCategory[]> = {
+        [IntakeDepartment.IT]: [
+            IntakeCategory.HARDWARE,
+            IntakeCategory.SOFTWARE,
+            IntakeCategory.ACCESS
+        ],
+        [IntakeDepartment.HR]: [
+            IntakeCategory.EMPLOYMENT_DOCUMENT,
+            IntakeCategory.LEAVE,
+            IntakeCategory.EMPLOYEE_SUPPORT
+        ],
+        [IntakeDepartment.FINANCE]: [
+            IntakeCategory.REIMBURSEMENT,
+            IntakeCategory.PAYROLL,
+            IntakeCategory.EXPENSE
+        ],
+     };
+     const allowedCategories = allowedCategoriesByDepartment[candidate.department];
+     if (!allowedCategories.includes(candidate.category)){
+        throw new BadGatewayException('AI provider returned a category that does not match the department')
+     }
     }
 }
