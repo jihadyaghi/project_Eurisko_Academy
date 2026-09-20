@@ -1,5 +1,4 @@
 import {BadRequestException, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import {Service_Requests} from './service-requests.data';
 import {ServiceRequestStatus} from './enum/service-request-status.enum';
 import {PrismaService} from '../prisma/prisma.service';
 

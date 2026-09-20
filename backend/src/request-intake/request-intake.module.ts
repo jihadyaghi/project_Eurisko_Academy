@@ -10,7 +10,7 @@ import { OpenRouterAiIntakeProvider } from './providers/openrouter-ai-intake.pro
     deterministicProvider: DeterministicAiIntakeProvider,
     openRouterProvider: OpenRouterAiIntakeProvider
   ) => {
-    if (process.env.AI_INTAKE_PROVIDER === 'requesty'){
+    if (process.env.AI_INTAKE_PROVIDER === 'openrouter'){
       return openRouterProvider;
     }
     return deterministicProvider;
