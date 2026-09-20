@@ -20,7 +20,7 @@ export class DeterministicAiIntakeProvider implements AiIntakeProvider {
         if (normalizedText.includes('employment letter') || normalizedText.includes('leave') || normalizedText.includes('employee')){
             return {
                 department: IntakeDepartment.HR,
-                category: normalizedText.includes('leave') ? IntakeCategory.LEAVE : normalizedText.includes('employment letter') ? IntakeCategory.EMPLOYMENT_DOCUMENTS : IntakeCategory.EMPLOYEE_SUPPORT,
+                category: normalizedText.includes('leave') ? IntakeCategory.LEAVE : normalizedText.includes('employment letter') ? IntakeCategory.EMPLOYMENT_DOCUMENT : IntakeCategory.EMPLOYEE_SUPPORT,
                 priority: IntakePriority.NORMAL,
                 summary: text.trim(),
                 needsReview: false

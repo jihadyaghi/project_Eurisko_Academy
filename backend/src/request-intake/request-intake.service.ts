@@ -1,12 +1,14 @@
-import { BadGatewayException, Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable, Inject } from '@nestjs/common';
 import { IntakeResultDto } from './dto/intake-result.dto';
 import { DeterministicAiIntakeProvider } from './providers/deterministic-ai-intake.provider';
 import { IntakeDepartment } from './enums/intake-department.enum';
 import { IntakeCategory } from './enums/intake-category.enum';
 import { IntakePriority } from './enums/intake-priority.enum';
+import { AI_INTAKE_PROVIDER } from './providers/ai-intake-provider.interface';
+import type { AiIntakeProvider } from './providers/ai-intake-provider.interface';
 @Injectable()
 export class RequestIntakeService {
-    constructor(private readonly aiProvider: DeterministicAiIntakeProvider, ){}
+    constructor( @Inject(AI_INTAKE_PROVIDER) private readonly aiProvider: AiIntakeProvider, ){}
     async analyze(text: string): Promise<IntakeResultDto>{
         try {
         const candidate = await this.aiProvider.analyze(text);
@@ -14,6 +16,7 @@ export class RequestIntakeService {
         return candidate;
         }
         catch (error){
+            console.error('AI provider error:', error);
             if (error instanceof BadGatewayException){
                 throw error;
             }

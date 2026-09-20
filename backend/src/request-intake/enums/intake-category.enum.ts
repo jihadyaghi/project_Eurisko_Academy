@@ -2,7 +2,7 @@ export enum IntakeCategory {
     HARDWARE = 'hardware',
     SOFTWARE = 'software',
     ACCESS = 'access',
-    EMPLOYMENT_DOCUMENTS = 'employment_documents',
+    EMPLOYMENT_DOCUMENT = 'employment_document',
     LEAVE = 'leave',
     EMPLOYEE_SUPPORT = 'employee_support',
     REIMBURSEMENT = 'reimbursement',
