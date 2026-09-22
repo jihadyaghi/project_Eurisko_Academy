@@ -2,7 +2,10 @@
 ## Overview
 The Internal Operations Service Hub is a company-internal system for requesting and tracking help from departments such as IT, HR, and Finance.
 The product provides employees with one central place to submit and follow internal service requests while helping internal department staff handle requests with clear status and ownership.
-The current implementation contains one integrated Service Request lifecycle slice built with React, NestJS, Prisma, and SQLite.
+The current implementation contains:
+- A full-stack Service Request lifecycle flow.
+- An AI-assisted Request Intake capability.
+The application is built with React, NestJS, Prisma, SQLite, Vitest, and OpenRouter.
 
 
 ## Problem
@@ -17,18 +20,18 @@ The Internal Operations Service Hub provides a structured foundation for handlin
 
 
 ## Current Product Slice
-The current Week 3 implementation provides one narrow full-stack Service Request flow.
+The current implementation includes:
+- A full-stack Service Request lifecycle flow.
+- An AI-assisted Request Intake capability.
+The Service Request flow is:
 ```text
-React Frontend -> NestJS API -> DTO Validation -> Authorization -> Lifecycle Business Rules -> Prisma -> SQLite -> API Response -> React UI Update
+React Frontend → NestJS API → DTO Validation → Authorization → Lifecycle Business Rules → Prisma → SQLite → API Response → React UI Update
 ```
-The implemented Service Request lifecycle is:
+The AI-assisted intake flow is:
 ```text
-submitted -> in_progress -> completed
+Employee Free Text → React Frontend → NestJS API → AI Provider → Structured Candidate → Backend Validation → Product-Safe Suggestion → React UI
 ```
-Valid transitions:
-- `submitted` → `in_progress`
-- `in_progress` → `completed`
-Invalid transitions are rejected by the backend.
+The AI is advisory only. Product-owned rules and final application authority remain in the backend.
 
 
 ## Technology Stack
@@ -49,6 +52,11 @@ Invalid transitions are rejected by the backend.
 ### Testing
 - Vitest
 - Supertest
+- Deterministic AI evaluation set
+### AI
+- OpenRouter
+- OpenAI-compatible SDK
+- Deterministic AI provider for repeatable evaluation
 
 
 ## Repository Structure
@@ -61,33 +69,53 @@ Invalid transitions are rejected by the backend.
 │   ├── data-model.md
 │   ├── week2-agentic-workflow.md
 │   ├── week3-full-stack-delivery.md
+│   ├── week4-production-ai.md
 │   └── decisions/
 │       └── ADR-001.md
 │
 ├── backend/
 │   ├── prisma/
 │   │   ├── migrations/
-│   │   └── schema.prisma
+│   │   ├── schema.prisma
+│   │   └── seed.ts
+│   │
 │   ├── src/
 │   │   ├── prisma/
 │   │   │   ├── prisma.module.ts
 │   │   │   └── prisma.service.ts
-│   │   └── service-requests/
+│   │   │
+│   │   ├── service-requests/
+│   │   │   ├── dto/
+│   │   │   ├── enums/
+│   │   │   ├── models/
+│   │   │   ├── service-requests.controller.ts
+│   │   │   ├── service-requests.service.ts
+│   │   │   ├── service-requests.module.ts
+│   │   │   ├── service-requests.service.spec.ts
+│   │   │   └── service-requests.integration.spec.ts
+│   │   │
+│   │   └── request-intake/
 │   │       ├── dto/
 │   │       ├── enums/
-│   │       ├── models/
-│   │       ├── service-requests.controller.ts
-│   │       ├── service-requests.service.ts
-│   │       ├── service-requests.module.ts
-│   │       ├── service-requests.service.spec.ts
-│   │       └── service-requests.integration.spec.ts
+│   │       ├── providers/
+│   │       │   ├── ai-intake-provider.interface.ts
+│   │       │   ├── deterministic-ai-intake.provider.ts
+│   │       │   └── openrouter-ai-intake.provider.ts
+│   │       ├── request-intake.controller.ts
+│   │       ├── request-intake.service.ts
+│   │       ├── request-intake.module.ts
+│   │       ├── request-intake.service.spec.ts
+│   │       └── request-intake.eval.spec.ts
+│   │
 │   ├── test/
 │   │   └── service-requests.e2e.spec.ts
+│   │
 │   └── package.json
 │
 └── frontend/
     ├── src/
-    │   └── App.tsx
+    │   ├── App.tsx
+    │   └── App.css
     └── package.json
 ```
 
@@ -100,6 +128,7 @@ The repository contains the following project documentation:
 - [`ADR-001.md`](docs/decisions/ADR-001.md) — Records the decision to centralize business rules and authorization in the application layer.
 - [`week2-agentic-workflow.md`](docs/week2-agentic-workflow.md) — Documents the Week 2 Understand → Direct → Prove workflow.
 - [`week3-full-stack-delivery.md`](docs/week3-full-stack-delivery.md) — Documents the Week 3 integrated product slice, API contract, persistence, authorization, failure handling, and automated confidence.
+- [`week4-production-ai.md`](docs/week4-production-ai.md) — Documents the Week 4 AI-assisted Request Intake capability, provider boundary, runtime validation, failure handling, AI evaluation set, and authority model.
 
 
 # Installation
@@ -288,40 +317,115 @@ backend/prisma/migrations/
 ```
 
 
+# AI-Assisted Request Intake
+The Week 4 capability accepts employee free text and returns a structured product suggestion.
+## Analyze a Request
+```http
+POST /request-intake/analyze
+```
+Example request:
+```json
+{
+  "text": "My laptop keeps shutting down and I cannot work."
+}
+```
+Example successful response:
+```json
+{
+  "department": "IT",
+  "category": "hardware",
+  "priority": "high",
+  "summary": "Laptop issue preventing the employee from working.",
+  "needsReview": false
+}
+```
+For ambiguous or insufficient input:
+```json
+{
+  "department": null,
+  "category": null,
+  "priority": "normal",
+  "summary": "Employee needs unspecified assistance.",
+  "needsReview": true
+}
+```
+The AI result is advisory and does not automatically create or mutate a Service Request.
+
+# AI Product Rules
+The application owns the allowed values.
+Departments:
+```text
+IT
+HR
+Finance
+```
+Categories:
+```text
+IT:
+hardware
+software
+access
+
+HR:
+employment_document
+leave
+employee_support
+
+
+Finance:
+reimbursement
+payroll
+expense
+```
+Priorities:
+```text
+low
+normal
+high
+```
+The backend validates both individual values and department/category relationships before accepting an AI candidate.
+
+
+# AI Failure Handling
+If the AI provider returns invalid product values, the backend rejects the candidate.
+If the AI provider is unavailable or fails unexpectedly, the backend returns:
+```text
+HTTP 502 Bad Gateway
+AI assistance is temporarily unavailable
+```
+AI failures do not modify Service Request state. 
+
 # Automated Tests
 From the `backend` directory, run:
 ```bash
 npm test
 ```
-The automated suite covers four important behaviors.
-### Business-Rule Test
-Verifies that:
-```text
-completed → in_progress
+The full regression suite covers:
+- Service Request business rules
+- Valid lifecycle transitions
+- Invalid lifecycle transitions
+- Database integration
+- End-to-end HTTP behavior
+- Handler authorization behavior
+- Regression protection
+- Invalid AI output
+- AI provider failure
+- Department/category cross-field validation
+- AI evaluation cases
+
+# AI Evaluation Set
+Run the focused AI evaluation suite with:
+```bash
+npm run ai:eval
 ```
-is rejected.
-### Database Integration Test
-Verifies:
-```text
-ServiceRequestsService → Prisma → SQLite
-```
-and confirms that a valid lifecycle transition is persisted.
-### End-to-End Test
-Sends an HTTP request through the NestJS application and verifies:
-```text
-HTTP Request → Controller → Validation → Authorization → Service → Prisma → SQLite → HTTP Response
-```
-### Regression Protection
-Protects the existing valid behavior:
-```text
-submitted → in_progress
-```
-from being accidentally broken by future changes.
-Current verified result:
-```text
-Test Files  3 passed
-Tests       4 passed
-```
+The current evaluation set contains seven representative cases:
+1. Clear IT request
+2. Clear HR request
+3. Clear Finance request
+4. Urgent IT request
+4. Thin input
+5. Ambiguous input
+6. Untrusted / unsupported instruction
 
 
 # Manual Verification
@@ -336,16 +440,21 @@ The implemented slice has also been manually verified.
 | Assigned handler changes status | 200 OK |
 | Different handler changes status | 403 Forbidden |
 | Restart backend after persisted update | State remains stored |
+| Clear IT AI input                      | IT / hardware        |
+| Clear HR AI input                      | HR / employment_document |
+| Clear Finance AI input                 | Finance / reimbursement  |
+| Ambiguous AI input                     | Manual review            |
+| Invalid AI product value               | Rejected                 |
+| External AI provider failure           | Stable 502 response      |
 
 
-# Week 2 → Week 3 Evolution
-Week 2 established the first verified backend lifecycle behavior:
+# Week 3 → Week 4 Evolution
+Week 3 established the integrated deterministic product slice:
 ```text
-NestJS → In-Memory Data → Manual Verification
+React → NestJS → Validation → Authorization → Business Rules → Prisma → SQLite → Automated Verification
 ```
-Week 3 evolves the same behavior into:
+Week 4 adds a bounded AI capability:
 ```text
-React
-→ NestJS → Validation → Authorization → Business Rules → Prisma → SQLite → Automated Verification
+Employee Free Text → React → NestJS → AI Provider → Structured Candidate → Backend Validation → Product-Safe Suggestion
 ```
-The lifecycle behavior from Week 2 remains protected by automated regression tests.
+The AI capability complements the deterministic application behavior rather than replacing it.
