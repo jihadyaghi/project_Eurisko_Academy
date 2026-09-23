@@ -84,3 +84,22 @@ export async function updateRequestStatus(
   }
   return data;
 }
+export async function getMyRequests(
+  token: string,
+): Promise<ServiceRequest[]> {
+  const response = await fetch(
+    `${API_URL}/service-requests/my`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(
+      error.message || 'Failed to load your requests',
+    );
+  }
+  return response.json();
+}

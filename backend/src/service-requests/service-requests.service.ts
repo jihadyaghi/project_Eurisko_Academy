@@ -110,4 +110,14 @@ export class ServiceRequestsService {
     },
    });
 }
+async findByEmployee(employeeId: number) {
+  return this.prisma.serviceRequest.findMany({
+    where: {
+      employeeId,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+}
 }

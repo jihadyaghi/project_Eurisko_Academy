@@ -20,6 +20,14 @@ export class ServiceRequestsController {
     );
   }
   @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.EMPLOYEE)
+  @Get('my')
+  getMyRequests(@Req() request: any) {
+  return this.serviceRequestsService.findByEmployee(
+    request.user.id,
+  );
+  }
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.HANDLER)
   @Get('handler/inbox')
   getHandlerInbox(@Req() request: any) {
