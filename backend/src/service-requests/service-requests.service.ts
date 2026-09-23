@@ -32,10 +32,25 @@ export class ServiceRequestsService {
         if (!allowedNestStatuses.includes(targetStatus)) {
             throw new BadRequestException(`Invalid status transition from ${request.status} to ${targetStatus}`);
         };
-        const updatedRequest = await this.prisma.serviceRequest.update({
-            where: {id},
-            data: {status: targetStatus}
-        });
+        const updatedRequest = await this.prisma.$transaction(
+            async (tx) => {
+                const updated = await tx.serviceRequest.update({
+                    where: {id},
+                    data: {
+                        status: targetStatus
+                    }
+                });
+                await tx.serviceRequestStatusHistory.create({
+                    data: {
+                        serviceRequestId: id,
+                        fromStatus: currentStatus,
+                        toStatus: targetStatus,
+                        changedByUserId: handlerId
+                    }
+                });
+                return updated;
+            }
+        )
         return updatedRequest;
     }
 }
