@@ -7,12 +7,55 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+enum UserRole {
+  EMPLOYEE
+  HANDLER
+}
+model User {
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          UserRole
+  departmentId  Int?
+  department       Department?         @relation(fields: [departmentId], references: [id])
+  createdRequests  ServiceRequest[]    @relation("EmployeeRequests")
+  handledRequests  ServiceRequest[]    @relation("HandlerRequests")
+  statusChanged    ServiceRequestStatusHistory[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt        
+}
+model Department {
+  id             Int     @id @default(autoincrement())
+  name           String  @unique
+  users          User[]
+  serviceRequests ServiceRequest[]
+  createdAt   DateTime     @default(now())
+}
 model ServiceRequest {
-  id            Int   @id @default(autoincrement())
-  employeeId    Int
-  departmentId  Int
-  handlerId     Int?
-  title         String
-  description   String
-  status        String
+  id           Int      @id @default(autoincrement())
+  employeeId   Int
+  departmentId Int
+  handlerId    Int?
+  title       String
+  description String
+  category    String?
+  priority    String    @default("normal")
+  status      String    @default("submitted")
+  employee   User       @relation("EmployeeRequests", fields: [employeeId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+  handler    User?      @relation("HandlerRequests", fields: [handlerId], references: [id])
+  statusHistory ServiceRequestStatusHistory[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model ServiceRequestStatusHistory {
+  id               Int        @id @default(autoincrement())
+  serviceRequestId Int
+  fromStatus       String
+  toStatus         String
+  changedByUserId  Int
+  createdAt        DateTime   @default(now())  
+  serviceRequest ServiceRequest @relation(fields: [serviceRequestId], references: [id])
+  changedByUser  User           @relation(fields: [changedByUserId], references: [id])
 }
