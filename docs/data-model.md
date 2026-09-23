@@ -1,87 +1,411 @@
 # Internal Operations Service Hub - Data Model
-## 1. Domain
- ### Important Entities
-  #### Employee
-  Represents an employee who submits and follows internal service requests.
-  #### Internal Department
-  Represents an internal company department, such as IT, HR, or Finance, that is responsible for handling relevant service requests.
-  #### Service Request
-  Represents an internal request submitted by an employee for help or a service from an internal department.
- ### Relationships
- - An Employee submits Service Requests.
- - Each Service Request is associated with the Employee who submitted it.
- - A Service Request is directed to an Internal Department.
- - An Internal Department handles Service Requests related to that department.
- ### Cardinality
- - One Employee can submit many Service Requests.
- - Each Service Request is submitted by one Employee.
- - One Internal Department can handle many Service Requests.
- - Each Service Request is directed to one Internal Department.
- ### Conceptual Domain Diagram
- ```mermaid
- erDiagram
-    EMPLOYEE ||--o{ SERVICE_REQUEST : submits
-    INTERNAL_DEPARTMENT ||--o{ SERVICE_REQUEST : handles
- ```
- ### Ownership
- - Each Service Request is associated with the Employee who submitted it.
- - A Service Request may be assigned to an authorized staff member responsible for handling it.
- - Request ownership should remain clear so that the system can show who is currently responsible for handling  the request.
- - The exact mechanism for assigning ownership is not yet defined and requires clarification.
+## 1. Purpose
+This document describes the current persistent data model of the Internal Operations Service Hub.
+The data model supports:
+- Authenticated users.
+- Employee and handler roles.
+- Department membership.
+- Service Request ownership.
+- Department routing.
+- Handler assignment.
+- Request lifecycle state.
+- Status-change audit history.
+The current implementation uses:
+```text
+Prisma ORM
+SQLite
+```
 
-## 2. Lifecycle + Rules
- ### State Transitions
- A Service Request has a lifecycle that represents its current progress.
- A possible initial lifecycle is:
- `Submitted -> In Progress -> Completed`
- These states are currently proposed for modeling purposes. The exact set of request statuses and allowed transitions requires further clarification.
- ### Invariants
- - Every Service Request must be associated with the Employee who submitted it.
- - Every Service Request must have a valid current status.
- - If a Service Request is assigned to a handler, that handler must be authorized to handle the request.
- - A Service Request must remain associated with the appropriate Internal Department once routing has been determined.
- - Changes to request data must not leave the request in an invalid or inconsistent state.
- ### Authorization-Sensitive Rules
- - Employees should only perform actions on Service Requests that they are authorized to access.
- - Internal Department Staff should only handle or update Service Requests they are authorized to manage.
- - Assignment and request updates must be validated against the user's permissions.
- - Authorization rules must be enforced by the Application Layer rather than trusted to the client.
- - The exact permission model and role definitions require further clarification.
+## 2. Core Entities
+The current persistent model contains four main entities:
+```text
+User
+Department
+ServiceRequest
+ServiceRequestStatusHistory
+```
+Their high-level relationships are:
+```text
+Department
+   │
+   ├── Users
+   │
+   └── Service Requests
+            │
+            ├── Employee / Creator
+            ├── Assigned Handler
+            └── Status History
+```
 
-## 3. Storage
- ### Storage Model
- A relational storage model is preferred for the Internal Operations Service Hub.
- The product has structured entities with clear relationships, such as Employees, Service Requests, and Internal  Departments. It also requires consistent relationships, ownership, status tracking, and authorization-sensitive  rules.
- A relational model provides a natural way to represent these relationships and maintain data consistency.
- The exact database technology is not selected at this stage.
- ### Durable vs Derived Data
-  #### Durable Data
-  The system should durably preserve the core information required to represent and track a Service Request, including:
-  - The Service Request itself.
-  - The Employee who submitted the request.
-  - The Internal Department associated with the request.
-  - The current status of the request.
-  - The current handler, when one has been assigned.
-  - Approval-related state when approval is required.
-  #### Derived Data
-  Information that can be calculated from durable data does not need to be stored separately unless a future performance requirement justifies it.
-  Examples include:
-  - The number of requests associated with a department.
-  - The number of requests in a particular status.
-  - Whether a request is currently assigned, based on whether a handler exists.
+## 3. User
+A `User` represents an authenticated person who can access the system.
+Users currently have one of two roles:
+```text
+EMPLOYEE
+HANDLER
+```
+### Fields
+| Field | Type | Description |
+|---|---|---|
+| `id` | Int | Unique user identifier |
+| `name` | String | User display name |
+| `email` | String | Unique login email |
+| `passwordHash` | String | bcrypt password hash |
+| `role` | UserRole | EMPLOYEE or HANDLER |
+| `departmentId` | Int? | Optional department membership |
+| `createdAt` | DateTime | Creation timestamp |
+| `updatedAt` | DateTime | Last update timestamp |
+### Role Enum
+```prisma
+enum UserRole {
+  EMPLOYEE
+  HANDLER
+}
+```
+### Department Membership
+A user may optionally belong to a department.
+In the current product flow, department membership is particularly important for handlers because it determines which department inbox they can access and which requests they may claim.
 
-## 4. Access
- ### Important Access Patterns
- The main product behaviors require the system to support access patterns such as:
- - Retrieve Service Requests submitted by a specific Employee.
- - Retrieve Service Requests associated with a specific Internal Department.
- - Retrieve a specific Service Request with its current status and ownership information.
- - Retrieve Service Requests assigned to a specific handler, when ownership has been assigned.
- - Retrieve approval-related information for requests that require approval.
- ### Index Considerations
- Indexes should be introduced only when they support important access patterns or demonstrated performance needs.
- Potentially justified indexes include:
- - An index supporting retrieval of Service Requests by Employee.
- - An index supporting retrieval of Service Requests by Internal Department.
- - An index supporting retrieval of Service Requests by assigned handler, if handler-based queues are required.
- Additional indexes should not be introduced until further access patterns or performance requirements justify them.
+## 4. Department
+A `Department` represents an internal operational department.
+Current seeded departments are:
+```text
+IT
+HR
+Finance
+```
+### Fields
+| Field | Type | Description |
+|---|---|---|
+| `id` | Int | Unique department identifier |
+| `name` | String | Unique department name |
+| `createdAt` | DateTime | Creation timestamp |
+A department can have:
+```text
+Many Users
+Many ServiceRequests
+```
+---
+## 5. ServiceRequest
+A `ServiceRequest` is the central business entity.
+It represents a request submitted by an employee and routed to an internal department.
+### Fields
+| Field | Type | Description |
+|---|---|---|
+| `id` | Int | Unique request identifier |
+| `employeeId` | Int | Employee who created the request |
+| `departmentId` | Int | Department responsible for the request |
+| `handlerId` | Int? | Handler currently assigned to the request |
+| `title` | String | Short request title |
+| `description` | String | Original request description |
+| `category` | String? | Request category |
+| `priority` | String | Request priority |
+| `status` | String | Current lifecycle state |
+| `createdAt` | DateTime | Creation timestamp |
+| `updatedAt` | DateTime | Last update timestamp |
+
+## 6. Service Request Ownership
+Every Service Request belongs to the employee who created it.
+```text
+User (EMPLOYEE)
+      │
+      └── creates
+             │
+             ▼
+       ServiceRequest
+```
+The `employeeId` is derived from the authenticated employee during request creation.
+The client does not choose another employee ID when submitting a request.
+
+## 7. Department Relationship
+Every Service Request belongs to one department.
+```text
+Department
+    │
+    └── ServiceRequest
+```
+The department represents the operational team responsible for handling the request.
+Current product-owned department values are:
+```text
+IT
+HR
+Finance
+```
+
+## 8. Handler Assignment
+A Service Request may have an assigned handler.
+The relationship is optional because new requests begin unassigned.
+```text
+handlerId = null
+```
+After a valid claim:
+```text
+handlerId = authenticated handler ID
+```
+Relationship:
+```text
+User (HANDLER)
+      │
+      └── handles
+             │
+             ▼
+       ServiceRequest
+```
+A handler may handle many requests.
+A Service Request can have at most one currently assigned handler.
+
+## 9. Request Lifecycle
+The current lifecycle states are:
+```text
+submitted
+in_progress
+completed
+```
+The lifecycle is:
+```text
+submitted -> in_progress -> completed
+```
+Allowed transitions:
+```text
+submitted → in_progress
+in_progress → completed
+```
+The application layer rejects transitions outside this lifecycle.
+The database stores the current state, while the application layer owns transition validity.
+
+## 10. ServiceRequestStatusHistory
+`ServiceRequestStatusHistory` records request lifecycle changes.
+It provides an audit trail showing:
+```text
+What changed?
+From which state?
+To which state?
+Who changed it?
+When did it change?
+```
+### Fields
+| Field | Type | Description |
+|---|---|---|
+| `id` | Int | Unique history record identifier |
+| `serviceRequestId` | Int | Request that changed |
+| `fromStatus` | String | Previous lifecycle state |
+| `toStatus` | String | New lifecycle state |
+| `changedByUserId` | Int | User who performed the change |
+| `createdAt` | DateTime | Time of the transition |
+Relationship:
+```text
+ServiceRequest
+      │
+      └── has many
+             │
+             ▼
+ServiceRequestStatusHistory
+```
+The user responsible for the transition is also related to the history record:
+```text
+User
+ │
+ └── statusChanges
+          │
+          ▼
+ServiceRequestStatusHistory
+```
+
+## 11. Audit Example
+Consider a request created with:
+```text
+status = submitted
+handlerId = null
+```
+After handler `201` claims the request:
+```text
+handlerId = 201
+```
+When the handler starts working:
+```text
+ServiceRequest.status
+submitted → in_progress
+```
+A history record is created:
+```text
+fromStatus = submitted
+toStatus = in_progress
+changedByUserId = 201
+```
+When the request is completed:
+```text
+ServiceRequest.status
+in_progress → completed
+```
+Another history record is created:
+```text
+fromStatus = in_progress
+toStatus = completed
+changedByUserId = 201
+```
+The Service Request stores the current state while the history table preserves how that state was reached.
+
+## 12. Transaction Boundary
+A lifecycle change requires two persistent operations:
+```text
+1. Update ServiceRequest.status
+2. Create ServiceRequestStatusHistory
+```
+These operations are executed inside one Prisma transaction.
+```text
+BEGIN TRANSACTION
+
+Update current status
+        +
+Create audit history
+COMMIT
+```
+If either operation fails, the transaction does not leave the system with only half of the intended change.
+
+## 13. Current Prisma Schema
+The current model is represented by the following Prisma structure:
+```prisma
+enum UserRole {
+  EMPLOYEE
+  HANDLER
+}
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  departmentId Int?
+  department Department? @relation(fields: [departmentId], references: [id])
+  createdRequests ServiceRequest[] @relation("EmployeeRequests")
+  handledRequests ServiceRequest[] @relation("HandlerRequests")
+  statusChanges   ServiceRequestStatusHistory[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Department {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  users           User[]
+  serviceRequests ServiceRequest[]
+
+  createdAt DateTime @default(now())
+}
+model ServiceRequest {
+  id           Int  @id @default(autoincrement())
+  employeeId   Int
+  departmentId Int
+  handlerId    Int?
+  title       String
+  description String
+  category    String?
+  priority    String @default("normal")
+  status      String @default("submitted")
+  employee   User       @relation("EmployeeRequests", fields: [employeeId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+  handler    User?      @relation("HandlerRequests", fields: [handlerId], references: [id])
+  statusHistory ServiceRequestStatusHistory[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model ServiceRequestStatusHistory {
+  id               Int      @id @default(autoincrement())
+  serviceRequestId Int
+  fromStatus       String
+  toStatus         String
+  changedByUserId  Int
+  createdAt        DateTime @default(now())
+  serviceRequest ServiceRequest @relation(fields: [serviceRequestId], references: [id])
+  changedByUser  User           @relation(fields: [changedByUserId], references: [id])
+}
+```
+
+## 14. Relationship Summary
+```text
+Department 1 ─────── * User
+Department 1 ─────── * ServiceRequest
+User (Employee) 1 ── * ServiceRequest
+                      via employeeId
+User (Handler) 1 ─── * ServiceRequest
+                      via handlerId
+ServiceRequest 1 ─── * ServiceRequestStatusHistory
+User 1 ───────────── * ServiceRequestStatusHistory
+                      via changedByUserId
+```
+
+## 15. Seed Data
+The development seed provides deterministic demo data.
+### Departments
+```text
+1 → IT
+2 → HR
+3 → Finance
+```
+### Demo Users
+```text
+Employee
+ID: 101
+Role: EMPLOYEE
+Email: employee@example.com
+
+IT Handler
+ID: 201
+Role: HANDLER
+Department: IT
+Email: it.handler@example.com
+
+HR Handler
+ID: 202
+Role: HANDLER
+Department: HR
+Email: hr.handler@example.com
+
+Finance Handler
+ID: 203
+Role: HANDLER
+Department: Finance
+Email: finance.handler@example.com
+```
+Demo passwords are stored in the database as bcrypt hashes.
+The deterministic IDs are development/demo fixtures and should not be treated as a production identity strategy.
+
+## 16. Development and Test Databases
+Development and automated testing use separate SQLite databases.
+```text
+Development:
+dev.db
+
+Automated Tests:
+test.db
+```
+This prevents automated tests from modifying normal development data.
+The test command applies Prisma migrations to the isolated test database before executing the automated suite.
+
+## 17. Data Ownership Rules
+The current data model supports several application-level ownership rules.
+### Employee Identity
+```text
+employeeId
+```
+comes from authenticated identity during request creation.
+### Handler Identity
+```text
+handlerId
+```
+is assigned using the authenticated handler during the claim operation.
+### Department Access
+A handler may only claim a Service Request when:
+```text
+handler.departmentId
+=
+serviceRequest.departmentId
+```
+### Status Changes
+A handler may change request status only when:
+```text
+serviceRequest.handlerId
+=
+authenticated handler ID
+```
+These rules are enforced by the application layer rather than trusted to client input.
+
