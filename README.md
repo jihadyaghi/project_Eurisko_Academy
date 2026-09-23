@@ -1,68 +1,95 @@
 # Internal Operations Service Hub
 ## Overview
 The Internal Operations Service Hub is a company-internal system for requesting and tracking help from departments such as IT, HR, and Finance.
-The product provides employees with one central place to submit and follow internal service requests while helping internal department staff handle requests with clear status and ownership.
-The current implementation contains:
-- A full-stack Service Request lifecycle flow.
-- An AI-assisted Request Intake capability.
+The product provides employees with one central place to submit internal service requests while giving department handlers a structured workflow for receiving, claiming, processing, and completing those requests.
+The current implementation includes:
+- JWT-based authentication.
+- Role-based authorization.
+- Separate Employee and Handler workflows.
+- AI-assisted Request Intake.
+- Persistent Service Request creation.
+- Department-based routing.
+- Handler request assignment.
+- Controlled lifecycle transitions.
+- Status-change audit history.
+- Automated unit, integration, AI evaluation, and end-to-end testing.
 The application is built with React, NestJS, Prisma, SQLite, Vitest, and OpenRouter.
 
-
 ## Problem
-Internal requests are often communicated through unstructured channels.
+Internal requests are often communicated through unstructured channels such as messages, email threads, or verbal communication.
 This can cause requests to:
 - Be forgotten.
 - Be sent to the wrong person.
 - Have unclear ownership.
 - Have unclear status.
-- Have unclear approval progress.
-The Internal Operations Service Hub provides a structured foundation for handling these requests.
+- Be difficult to track.
+The Internal Operations Service Hub provides a structured foundation for submitting, routing, assigning, processing, and tracking these requests.
 
-
-## Current Product Slice
-The current implementation includes:
-- A full-stack Service Request lifecycle flow.
-- An AI-assisted Request Intake capability.
-The Service Request flow is:
+## Current Product Flow
+The implemented product flow is:
 ```text
-React Frontend → NestJS API → DTO Validation → Authorization → Lifecycle Business Rules → Prisma → SQLite → API Response → React UI Update
+Login
+  ↓
+Authenticated Role
+  ↓
+┌───────────────────────────────┐
+│                               │
+EMPLOYEE                      HANDLER
+│                               │
+Employee Portal              Department Inbox
+│                               │
+Describe Request             View Requests
+│                               │
+AI-Assisted Intake           Claim Request
+│                               │
+Review Suggestion            Assigned Ownership
+│                               │
+Submit Request               Start Progress
+│                               │
+Persist Request              Complete Request
+│                               │
+└───────────────┬───────────────┘
+                ↓
+          Durable State
+                ↓
+          Audit History
 ```
-The AI-assisted intake flow is:
-```text
-Employee Free Text → React Frontend → NestJS API → AI Provider → Structured Candidate → Backend Validation → Product-Safe Suggestion → React UI
-```
-The AI is advisory only. Product-owned rules and final application authority remain in the backend.
+The backend remains the authority for authentication, authorization, validation, lifecycle rules, and persistence.
+The AI capability is advisory only.
 
-
-## Technology Stack
-### Frontend
+# Technology Stack
+## Frontend
 - React
 - TypeScript
 - Vite
-### Backend
+## Backend
 - NestJS
 - TypeScript
-### Database
+- Passport
+- JWT
+- bcrypt
+## Database
 - SQLite
 - Prisma ORM
-### Validation
+## Validation
 - NestJS ValidationPipe
 - class-validator
 - class-transformer
-### Testing
+## Testing
 - Vitest
 - Supertest
+- Isolated SQLite test database
 - Deterministic AI evaluation set
-### AI
+## AI
 - OpenRouter
 - OpenAI-compatible SDK
 - Deterministic AI provider for repeatable evaluation
 
-
-## Repository Structure
+# Repository Structure
 ```text
 .
 ├── README.md
+│
 ├── docs/
 │   ├── product-spec.md
 │   ├── architecture.md
@@ -70,6 +97,7 @@ The AI is advisory only. Product-owned rules and final application authority rem
 │   ├── week2-agentic-workflow.md
 │   ├── week3-full-stack-delivery.md
 │   ├── week4-production-ai.md
+│   ├── product-enhancements.md
 │   └── decisions/
 │       └── ADR-001.md
 │
@@ -80,32 +108,10 @@ The AI is advisory only. Product-owned rules and final application authority rem
 │   │   └── seed.ts
 │   │
 │   ├── src/
+│   │   ├── auth/
 │   │   ├── prisma/
-│   │   │   ├── prisma.module.ts
-│   │   │   └── prisma.service.ts
-│   │   │
 │   │   ├── service-requests/
-│   │   │   ├── dto/
-│   │   │   ├── enums/
-│   │   │   ├── models/
-│   │   │   ├── service-requests.controller.ts
-│   │   │   ├── service-requests.service.ts
-│   │   │   ├── service-requests.module.ts
-│   │   │   ├── service-requests.service.spec.ts
-│   │   │   └── service-requests.integration.spec.ts
-│   │   │
 │   │   └── request-intake/
-│   │       ├── dto/
-│   │       ├── enums/
-│   │       ├── providers/
-│   │       │   ├── ai-intake-provider.interface.ts
-│   │       │   ├── deterministic-ai-intake.provider.ts
-│   │       │   └── openrouter-ai-intake.provider.ts
-│   │       ├── request-intake.controller.ts
-│   │       ├── request-intake.service.ts
-│   │       ├── request-intake.module.ts
-│   │       ├── request-intake.service.spec.ts
-│   │       └── request-intake.eval.spec.ts
 │   │
 │   ├── test/
 │   │   └── service-requests.e2e.spec.ts
@@ -114,22 +120,28 @@ The AI is advisory only. Product-owned rules and final application authority rem
 │
 └── frontend/
     ├── src/
+    │   ├── api/
+    │   ├── pages/
+    │   ├── styles/
+    │   ├── types/
+    │   ├── utils/
     │   ├── App.tsx
-    │   └── App.css
+    │   ├── index.css
+    │   └── main.tsx
+    │
     └── package.json
 ```
 
-
-## Documentation
+# Documentation
 The repository contains the following project documentation:
 - [`product-spec.md`](docs/product-spec.md) — Defines the product problem, actors, requirements, constraints, non-goals, and acceptance criteria.
-- [`architecture.md`](docs/architecture.md) — Describes the high-level system structure and architectural boundaries.
-- [`data-model.md`](docs/data-model.md) — Describes domain entities, relationships, lifecycle rules, and storage reasoning.
+- [`architecture.md`](docs/architecture.md) — Describes the current system architecture, trust boundaries, authentication, authorization, persistence, and AI boundary.
+- [`data-model.md`](docs/data-model.md) — Describes the current persistent entities, relationships, lifecycle state, ownership, and audit history.
 - [`ADR-001.md`](docs/decisions/ADR-001.md) — Records the decision to centralize business rules and authorization in the application layer.
 - [`week2-agentic-workflow.md`](docs/week2-agentic-workflow.md) — Documents the Week 2 Understand → Direct → Prove workflow.
-- [`week3-full-stack-delivery.md`](docs/week3-full-stack-delivery.md) — Documents the Week 3 integrated product slice, API contract, persistence, authorization, failure handling, and automated confidence.
-- [`week4-production-ai.md`](docs/week4-production-ai.md) — Documents the Week 4 AI-assisted Request Intake capability, provider boundary, runtime validation, failure handling, AI evaluation set, and authority model.
-
+- [`week3-full-stack-delivery.md`](docs/week3-full-stack-delivery.md) — Documents the Week 3 integrated full-stack delivery.
+- [`week4-production-ai.md`](docs/week4-production-ai.md) — Documents the Week 4 production-oriented AI capability and evaluation approach.
+- [`product-enhancements.md`](docs/product-enhancements.md) — Documents additional product and engineering enhancements implemented beyond the core assignment.
 
 # Installation
 ## Prerequisites
@@ -137,7 +149,6 @@ Install:
 - Node.js
 - npm
 Clone the repository and enter the project directory.
-
 ## Backend Setup
 From the repository root:
 ```bash
@@ -151,25 +162,25 @@ Generate the Prisma client:
 ```bash
 npx prisma generate
 ```
-Apply the database migrations:
+Apply database migrations:
 ```bash
 npx prisma migrate dev
+```
+Seed the development database:
+```bash
+npm run db:seed
 ```
 Start the NestJS backend:
 ```bash
 npm run start:dev
 ```
-Seed the development database with sample data:
-```bash
-npm run db:seed
-```
 The backend runs by default at:
 ```text
 http://localhost:3000
 ```
-
 ## Frontend Setup
 Open another terminal from the repository root:
+
 ```bash
 cd frontend
 ```
@@ -185,141 +196,196 @@ The frontend runs by default at:
 ```text
 http://localhost:5173
 ```
-Open that URL in a browser to exercise the Service Request flow.
+Open that URL in a browser to use the application.
 
+# Authentication
+The current application uses JWT-based authentication.
+Authentication flow:
+```text
+Email + Password -> User Lookup -> bcrypt Password Verification -> JWT Access Token -> Authenticated API Requests
+```
+The backend derives protected user identity from the verified JWT.
+The client does not provide trusted employee or handler identity for protected business operations.
 
-# API Contract
+## Login
+```http
+POST /auth/login
+```
+Example request:
+```json
+{
+  "email": "employee@example.com",
+  "password": "password123"
+}
+```
+A successful login returns an access token and authenticated user information.
+
+## Current User
+```http
+GET /auth/me
+```
+Requires:
+```http
+Authorization: Bearer <access-token>
+```
+This endpoint returns the currently authenticated user.
+
+# Roles and Authorization
+The current application contains two roles:
+```text
+EMPLOYEE
+HANDLER
+```
+## Employee
+An employee can:
+- Authenticate.
+- Use AI-assisted Request Intake.
+- Submit a Service Request.
+## Handler
+A handler can:
+- Authenticate.
+- Access their department inbox.
+- Claim an unassigned request from their department.
+- Start work on an assigned request.
+- Complete an assigned request.
+Backend authorization remains authoritative.
+Hiding an action in the frontend is not treated as a security boundary.
+
+# Service Request API
+## Create Service Request
+```http
+POST /service-requests
+```
+Requires an authenticated `EMPLOYEE`.
+Example request:
+```json
+{
+  "title": "Laptop issue preventing work",
+  "description": "My laptop keeps shutting down and I cannot work.",
+  "departmentId": 1,
+  "category": "hardware",
+  "priority": "high"
+}
+```
+The employee does not provide:
+```text
+employeeId
+handlerId
+status
+```
+The backend determines the initial ownership and state:
+```text
+employeeId = authenticated employee
+handlerId = null
+status = submitted
+```
 ## Get All Service Requests
 ```http
 GET /service-requests
 ```
-Example:
-```text
-http://localhost:3000/service-requests
-```
-
+Returns the Service Requests exposed by the current API.
 ## Get One Service Request
 ```http
 GET /service-requests/:id
 ```
 Example:
 ```text
-http://localhost:3000/service-requests/1
+GET http://localhost:3000/service-requests/1
 ```
-Example response:
-```json
-{
-  "id": 1,
-  "employeeId": 101,
-  "departmentId": 1,
-  "handlerId": 201,
-  "title": "Laptop Issue",
-  "description": "My laptop is not turning on.",
-  "status": "submitted"
-}
+## Handler Department Inbox
+```http
+GET /service-requests/handler/inbox
 ```
-
+Requires an authenticated `HANDLER`.
+The backend uses the handler's authenticated department to determine which requests belong in the inbox.
+The client does not select another department for authorization purposes.
+## Claim Service Request
+```http
+PATCH /service-requests/:id/assign
+```
+Requires an authenticated `HANDLER`.
+The backend verifies that:
+- The handler belongs to a department.
+- The request belongs to the same department.
+- The request is currently unassigned.
+After a successful claim:
+```text
+handlerId = authenticated handler ID
+```
+The client does not send a handler ID.
 ## Change Service Request Status
 ```http
 PATCH /service-requests/:id/status
 ```
-Example:
+Requires an authenticated `HANDLER`.
+Example request body:
+```json
+{
+  "status": "in_progress"
+}
+```
+The handler identity comes from the authenticated JWT rather than the request body.
+---
+# Service Request Lifecycle
+The current lifecycle is:
 ```text
-PATCH http://localhost:3000/service-requests/1/status
+submitted -> in_progress -> completed
 ```
-Request body:
-```json
-{
-  "status": "in_progress",
-  "handlerId": 201
-}
+Valid transitions:
+```text
+submitted → in_progress
+in_progress → completed
 ```
-A successful request returns the updated Service Request.
-
-
-# Input Validation
-Status-transition requests are validated by the backend.
-A valid request requires:
-- A valid Service Request status.
-- An integer `handlerId`.
-Example intentionally invalid request:
-```json
-{
-  "status": "banana",
-  "handlerId": 201
-}
+Examples of invalid transitions:
+```text
+submitted → completed
+completed → in_progress
 ```
-Expected response:
+Invalid lifecycle transitions return:
 ```text
 HTTP 400 Bad Request
 ```
-The invalid request is rejected before the Service Request is updated.
+The rejected transition does not modify the persisted Service Request.
 
-
-# Authorization
-The implemented authorization rule is:
-> Only the assigned handler can change the status of a Service Request.
-For example, if:
+# Authorization Rules
+Authentication establishes user identity.
+Authorization determines which operations that identity may perform.
+The main handler ownership rule is:
+> Only the assigned authenticated handler can change the status of a Service Request.
+For example:
 ```text
-handlerId = 201
+Request handlerId = 201
+Authenticated handler ID = 201
 ```
-then:
-```json
-{
-  "status": "in_progress",
-  "handlerId": 201
-}
-```
-is allowed when the lifecycle transition is valid.
-Expected response:
+A valid lifecycle transition is allowed.
+If:
 ```text
-HTTP 200 OK
+Request handlerId = 201
+Authenticated handler ID = 202
 ```
-An unauthorized handler:
-```json
-{
-  "status": "in_progress",
-  "handlerId": 202
-}
-```
-is rejected.
-Expected response:
+the operation is rejected with:
 ```text
 HTTP 403 Forbidden
 ```
-For this Week 3 slice, `handlerId` is used as a simplified demonstration identity.
-A production system would derive the user's identity from a trusted authentication mechanism such as a session or access token.
+Handler identity is derived from the verified JWT and is not accepted from the status-transition request body.
 
-
-# Expected Failure Handling
-Invalid lifecycle transitions are intentionally rejected.
-For example:
+# Department Authorization
+Handlers are associated with departments.
+Current departments include:
 ```text
-completed → in_progress
+IT
+HR
+Finance
 ```
-Expected backend response:
+A handler may claim a request only when:
 ```text
-HTTP 400 Bad Request
+handler.departmentId = serviceRequest.departmentId
 ```
-The React frontend handles unsuccessful API responses and displays the returned error message to the user.
-The rejected transition does not modify the persisted Service Request.
-
-
-# Database Persistence
-Service Requests are persisted in SQLite through Prisma.
-```text
-NestJS Service -> Prisma -> SQLite
-```
-Unlike the Week 2 in-memory implementation, Week 3 status changes survive backend restarts.
-Database schema changes are managed through Prisma migrations located in:
-```text
-backend/prisma/migrations/
-```
-
+This prevents a handler from claiming requests belonging to another department.
 
 # AI-Assisted Request Intake
-The Week 4 capability accepts employee free text and returns a structured product suggestion.
-## Analyze a Request
+The AI-assisted Request Intake capability accepts employee free text and returns a structured product suggestion.
+## Analyze Request
 ```http
 POST /request-intake/analyze
 ```
@@ -349,69 +415,29 @@ For ambiguous or insufficient input:
   "needsReview": true
 }
 ```
-The AI result is advisory and does not automatically create or mutate a Service Request.
-
-# AI Product Rules
-The application owns the allowed values.
-Departments:
-```text
-IT
-HR
-Finance
-```
-Categories:
-```text
-IT:
-hardware
-software
-access
-
-HR:
-employment_document
-leave
-employee_support
-
-
-Finance:
-reimbursement
-payroll
-expense
-```
-Priorities:
-```text
-low
-normal
-high
-```
-The backend validates both individual values and department/category relationships before accepting an AI candidate.
-
-
-# AI Failure Handling
-If the AI provider returns invalid product values, the backend rejects the candidate.
-If the AI provider is unavailable or fails unexpectedly, the backend returns:
-```text
-HTTP 502 Bad Gateway
-AI assistance is temporarily unavailable
-```
-AI failures do not modify Service Request state. 
 
 # Automated Tests
 From the `backend` directory, run:
+
 ```bash
 npm test
 ```
-The full regression suite covers:
-- Service Request business rules
-- Valid lifecycle transitions
-- Invalid lifecycle transitions
-- Database integration
-- End-to-end HTTP behavior
-- Handler authorization behavior
-- Regression protection
-- Invalid AI output
-- AI provider failure
-- Department/category cross-field validation
-- AI evaluation cases
+The automated suite covers behavior including:
+- Service Request creation.
+- Department validation.
+- Valid lifecycle transitions.
+- Invalid lifecycle transitions.
+- Handler assignment.
+- Cross-department assignment rejection.
+- Already-assigned request rejection.
+- Department inbox behavior.
+- Handler authorization.
+- Database integration.
+- Audit-history persistence.
+- AI output validation.
+- AI provider failure.
+- Department/category cross-field validation.
+- End-to-end HTTP behavior.
 
 # AI Evaluation Set
 Run the focused AI evaluation suite with:
@@ -419,42 +445,132 @@ Run the focused AI evaluation suite with:
 npm run ai:eval
 ```
 The current evaluation set contains seven representative cases:
-1. Clear IT request
-2. Clear HR request
-3. Clear Finance request
-4. Urgent IT request
-4. Thin input
-5. Ambiguous input
-6. Untrusted / unsupported instruction
+1. Clear IT request.
+2. Clear HR request.
+3. Clear Finance request.
+4. Urgent IT request.
+5. Thin input.
+6. Ambiguous input.
+7. Untrusted or unsupported instruction.
+The evaluation set provides repeatable evidence for expected AI-assisted intake behavior.
 
+# Project Evolution
 
-# Manual Verification
-The implemented slice has also been manually verified.
-| Scenario | Expected Result |
-|---|---|
-| `submitted → in_progress` | Accepted |
-| `in_progress → completed` | Accepted |
-| `submitted → completed` | 400 Bad Request |
-| `completed → in_progress` | 400 Bad Request |
-| Invalid status such as `banana` | 400 Bad Request |
-| Assigned handler changes status | 200 OK |
-| Different handler changes status | 403 Forbidden |
-| Restart backend after persisted update | State remains stored |
-| Clear IT AI input                      | IT / hardware        |
-| Clear HR AI input                      | HR / employment_document |
-| Clear Finance AI input                 | Finance / reimbursement  |
-| Ambiguous AI input                     | Manual review            |
-| Invalid AI product value               | Rejected                 |
-| External AI provider failure           | Stable 502 response      |
+## Week 1
 
+Established product understanding, architecture boundaries, and the decision to centralize business rules and authorization in the application layer.
 
-# Week 3 → Week 4 Evolution
-Week 3 established the integrated deterministic product slice:
+## Week 2
+
+Established the deterministic Service Request workflow using the:
+
 ```text
-React → NestJS → Validation → Authorization → Business Rules → Prisma → SQLite → Automated Verification
+Understand → Direct → Prove
 ```
-Week 4 adds a bounded AI capability:
+
+approach.
+
+## Week 3
+
+Delivered the first integrated full-stack Service Request slice:
+
 ```text
-Employee Free Text → React → NestJS → AI Provider → Structured Candidate → Backend Validation → Product-Safe Suggestion
+React
+→ NestJS
+→ Validation
+→ Authorization
+→ Business Rules
+→ Prisma
+→ SQLite
+→ Automated Verification
 ```
-The AI capability complements the deterministic application behavior rather than replacing it.
+
+## Week 4
+
+Added bounded AI-assisted Request Intake:
+
+```text
+Employee Free Text
+→ AI Provider
+→ Structured Candidate
+→ Backend Validation
+→ Product-Safe Suggestion
+```
+
+## Additional Product Enhancements
+
+The project was extended beyond the core slice with:
+
+- Relational users and departments.
+- JWT authentication.
+- bcrypt password hashing.
+- Role-based authorization.
+- Authenticated identity.
+- Employee request submission.
+- Department handler inbox.
+- Request claiming.
+- Transactional audit history.
+- Full product-flow E2E testing.
+- Role-oriented frontend portals.
+- Modular frontend organization.
+
+Detailed enhancement documentation is available in:
+
+```text
+docs/product-enhancements.md
+```
+
+---
+
+# Current Scope Boundaries
+
+The current implementation intentionally does not include:
+
+- Approval workflows.
+- Notifications.
+- Password reset.
+- Email verification.
+- Refresh tokens.
+- OAuth or social login.
+- Administrator portal.
+- Multi-tenant architecture.
+
+These may be considered future extensions rather than current implemented behavior.
+
+---
+
+# Final Current Flow
+
+```text
+Employee
+   ↓
+Login
+   ↓
+Employee Portal
+   ↓
+AI-Assisted Request Intake
+   ↓
+Human Review
+   ↓
+Submit Service Request
+   ↓
+NestJS Validation / Authorization
+   ↓
+Prisma / SQLite
+   ↓
+Department Queue
+   ↓
+Handler Login
+   ↓
+Department Inbox
+   ↓
+Claim Request
+   ↓
+submitted → in_progress
+   ↓
+in_progress → completed
+   ↓
+Transactional Audit History
+```
+
+The result is a small but complete internal operations workflow with explicit responsibility boundaries, deterministic business rules, persistent state, bounded AI assistance, authenticated access, and automated verification.
