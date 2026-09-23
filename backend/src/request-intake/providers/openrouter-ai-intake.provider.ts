@@ -68,6 +68,13 @@ export class OpenRouterAiIntakeProvider implements AiIntakeProvider {
         if (!content){
             throw new Error('OpenRouter returned an empty response');
         }
-        return JSON.parse(content) as IntakeResultDto;
+        const cleanedContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
+        const jsonStart = cleanedContent.indexOf('{');
+        const jsonEnd = cleanedContent.lastIndexOf('}');
+        if (jsonStart === -1 || jsonEnd === -1){
+            throw new Error('OpenRouter returned a non-JSON response');
+        }
+        const jsonText = cleanedContent.slice(jsonStart, jsonEnd + 1);
+        return JSON.parse(jsonText) as IntakeResultDto;
     }
 }
