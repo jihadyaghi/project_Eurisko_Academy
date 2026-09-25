@@ -17,7 +17,8 @@
     "test": "cross-env DATABASE_URL=file:./test.db prisma migrate deploy && cross-env DATABASE_URL=file:./test.db vitest run",
     "ai:eval": "vitest run src/request-intake/request-intake.eval.spec.ts",
     "test:watch": "vitest",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "admin:bootstrap": "tsx prisma/bootstrap-admin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

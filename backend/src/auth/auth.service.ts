@@ -17,14 +17,17 @@ export class AuthService {
             }
         });
         if (!user){
-            throw new UnauthorizedException('Invalid credentials')
+            throw new UnauthorizedException('Invalid credentials');
+        }
+        if (!user.isActive){
+            throw new UnauthorizedException('Account is inactive');
         }
         const passwordMtaches = await bcrypt.compare(
             loginDto.password,
             user.passwordHash
         );
         if (!passwordMtaches){
-            throw new UnauthorizedException('Invalid credentials')
+            throw new UnauthorizedException('Invalid credentials');
         }
         const payload = {
             sub: user.id,
