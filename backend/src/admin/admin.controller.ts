@@ -20,7 +20,7 @@ export class AdminController {
     createUser(@Body() body: CreateUserDto){
         return this.adminService.createUser(body);
     }
-    @Patch('user/:id/status')
+    @Patch('users/:id/status')
     UpdateUserStatus(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateUserStatusDto){
         return this.adminService.updateUserStatus(id, body.isActive);
     }

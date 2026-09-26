@@ -5,9 +5,10 @@ import { ServiceRequestsModule } from './service-requests/service-requests.modul
 import { PrismaModule } from './prisma/prisma.module';
 import { RequestIntakeModule } from './request-intake/request-intake.module';
 import { AuthModule } from './auth/auth.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
-  imports: [PrismaModule, ServiceRequestsModule, RequestIntakeModule, AuthModule],
+  imports: [PrismaModule, ServiceRequestsModule, RequestIntakeModule, AuthModule, AdminModule],
   controllers: [AppController],
   providers: [AppService],
 })

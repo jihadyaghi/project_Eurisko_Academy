@@ -3,7 +3,7 @@ import LoginPage from './pages/LoginPage';
 import EmployeePortal from './pages/EmployeePortal';
 import HandlerPortal from './pages/HandlerPortal';
 import {clearAuth,getStoredToken,getStoredUser,} from './utils/auth-storage';
-
+import AdminPortal from './pages/AdminPortal';
 import type { AuthUser } from './types/auth.types';
 function App() {
   const [token, setToken] = useState<string | null>(getStoredToken(),);
@@ -40,6 +40,11 @@ function App() {
         user={user}
         onLogout={handleLogout}/>
     );
+  }
+  if (user.role === 'ADMIN'){
+    return (
+      <AdminPortal token= {token} user= {user} onLogout= {handleLogout} />
+    )
   }
   return (
     <main className="portal-page">
