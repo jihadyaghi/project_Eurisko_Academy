@@ -4,6 +4,7 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from 'vitest';
 
 import request from 'supertest';
@@ -23,6 +24,7 @@ import * as bcrypt from 'bcrypt';
 
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { NotificationsService } from '../src/notifications/notifications.service';
 
 import { ServiceRequestStatus } from '../src/service-requests/enum/service-request-status.enum';
 
@@ -41,13 +43,24 @@ describe('Service Request E2E', () => {
   let hrRequestId: number;
   let assignedRequestId: number;
 
+  const notificationsMock = {
+    sendRequestCompletedEmail:
+      vi.fn().mockResolvedValue(undefined),
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule =
       await Test.createTestingModule({
         imports: [AppModule],
-      }).compile();
+      })
+        .overrideProvider(
+          NotificationsService,
+        )
+        .useValue(notificationsMock)
+        .compile();
 
-    app = moduleFixture.createNestApplication();
+    app =
+      moduleFixture.createNestApplication();
 
     app.useGlobalPipes(
       new ValidationPipe({
@@ -81,17 +94,19 @@ describe('Service Request E2E', () => {
       },
     });
 
-    const passwordHash = await bcrypt.hash(
-      'password123',
-      10,
-    );
+    const passwordHash =
+      await bcrypt.hash(
+        'password123',
+        10,
+      );
 
     // Employee 1
     await prisma.user.create({
       data: {
         id: 101,
         name: 'E2E Employee',
-        email: 'e2e.employee@example.com',
+        email:
+          'e2e.employee@example.com',
         passwordHash,
         role: UserRole.EMPLOYEE,
         isActive: true,
@@ -103,7 +118,8 @@ describe('Service Request E2E', () => {
       data: {
         id: 102,
         name: 'Second E2E Employee',
-        email: 'e2e.employee2@example.com',
+        email:
+          'e2e.employee2@example.com',
         passwordHash,
         role: UserRole.EMPLOYEE,
         isActive: true,
@@ -115,7 +131,8 @@ describe('Service Request E2E', () => {
       data: {
         id: 201,
         name: 'E2E IT Handler',
-        email: 'e2e.handler@example.com',
+        email:
+          'e2e.handler@example.com',
         passwordHash,
         role: UserRole.HANDLER,
         departmentId: 1,
@@ -127,8 +144,10 @@ describe('Service Request E2E', () => {
     await prisma.user.create({
       data: {
         id: 202,
-        name: 'Second E2E IT Handler',
-        email: 'e2e.handler2@example.com',
+        name:
+          'Second E2E IT Handler',
+        email:
+          'e2e.handler2@example.com',
         passwordHash,
         role: UserRole.HANDLER,
         departmentId: 1,
@@ -141,7 +160,8 @@ describe('Service Request E2E', () => {
       data: {
         id: 203,
         name: 'E2E HR Handler',
-        email: 'e2e.hr.handler@example.com',
+        email:
+          'e2e.hr.handler@example.com',
         passwordHash,
         role: UserRole.HANDLER,
         departmentId: 2,
@@ -156,12 +176,14 @@ describe('Service Request E2E', () => {
           employeeId: 102,
           departmentId: 1,
           handlerId: null,
-          title: 'Other Employee Request',
+          title:
+            'Other Employee Request',
           description:
             'Request belonging to another employee.',
           category: 'hardware',
           priority: 'normal',
-          status: ServiceRequestStatus.SUBMITTED,
+          status:
+            ServiceRequestStatus.SUBMITTED,
         },
       });
 
@@ -175,12 +197,15 @@ describe('Service Request E2E', () => {
           employeeId: 102,
           departmentId: 2,
           handlerId: 203,
-          title: 'HR Document Request',
+          title:
+            'HR Document Request',
           description:
             'Request belonging to HR department.',
-          category: 'employment_document',
+          category:
+            'employment_document',
           priority: 'normal',
-          status: ServiceRequestStatus.SUBMITTED,
+          status:
+            ServiceRequestStatus.SUBMITTED,
         },
       });
 
@@ -193,93 +218,124 @@ describe('Service Request E2E', () => {
           employeeId: 101,
           departmentId: 1,
           handlerId: 201,
-          title: 'Assigned IT Request',
+          title:
+            'Assigned IT Request',
           description:
             'This request is assigned to handler 201.',
           category: 'hardware',
           priority: 'normal',
-          status: ServiceRequestStatus.SUBMITTED,
+          status:
+            ServiceRequestStatus.SUBMITTED,
         },
       });
 
-    assignedRequestId = assignedRequest.id;
+    assignedRequestId =
+      assignedRequest.id;
 
     // Employee 1 login
-    const employeeLoginResponse = await request(
-      app.getHttpServer(),
-    )
-      .post('/auth/login')
-      .send({
-        email: 'e2e.employee@example.com',
-        password: 'password123',
-      })
-      .expect(201);
+    const employeeLoginResponse =
+      await request(
+        app.getHttpServer(),
+      )
+        .post('/auth/login')
+        .send({
+          email:
+            'e2e.employee@example.com',
+          password: 'password123',
+        })
+        .expect(201);
 
     employeeToken =
-      employeeLoginResponse.body.accessToken;
+      employeeLoginResponse.body
+        .accessToken;
 
-    expect(employeeToken).toBeTruthy();
+    expect(
+      employeeToken,
+    ).toBeTruthy();
 
     // Employee 2 login
     const secondEmployeeLoginResponse =
-      await request(app.getHttpServer())
+      await request(
+        app.getHttpServer(),
+      )
         .post('/auth/login')
         .send({
-          email: 'e2e.employee2@example.com',
+          email:
+            'e2e.employee2@example.com',
           password: 'password123',
         })
         .expect(201);
 
     secondEmployeeToken =
-      secondEmployeeLoginResponse.body.accessToken;
+      secondEmployeeLoginResponse
+        .body.accessToken;
 
-    expect(secondEmployeeToken).toBeTruthy();
+    expect(
+      secondEmployeeToken,
+    ).toBeTruthy();
 
     // IT Handler 1 login
-    const handlerLoginResponse = await request(
-      app.getHttpServer(),
-    )
-      .post('/auth/login')
-      .send({
-        email: 'e2e.handler@example.com',
-        password: 'password123',
-      })
-      .expect(201);
+    const handlerLoginResponse =
+      await request(
+        app.getHttpServer(),
+      )
+        .post('/auth/login')
+        .send({
+          email:
+            'e2e.handler@example.com',
+          password: 'password123',
+        })
+        .expect(201);
 
     handlerToken =
-      handlerLoginResponse.body.accessToken;
+      handlerLoginResponse.body
+        .accessToken;
 
-    expect(handlerToken).toBeTruthy();
+    expect(
+      handlerToken,
+    ).toBeTruthy();
 
     // IT Handler 2 login
     const secondHandlerLoginResponse =
-      await request(app.getHttpServer())
+      await request(
+        app.getHttpServer(),
+      )
         .post('/auth/login')
         .send({
-          email: 'e2e.handler2@example.com',
+          email:
+            'e2e.handler2@example.com',
           password: 'password123',
         })
         .expect(201);
 
     secondHandlerToken =
-      secondHandlerLoginResponse.body.accessToken;
+      secondHandlerLoginResponse
+        .body.accessToken;
 
-    expect(secondHandlerToken).toBeTruthy();
+    expect(
+      secondHandlerToken,
+    ).toBeTruthy();
 
     // HR Handler login
     const hrHandlerLoginResponse =
-      await request(app.getHttpServer())
+      await request(
+        app.getHttpServer(),
+      )
         .post('/auth/login')
         .send({
-          email: 'e2e.hr.handler@example.com',
+          email:
+            'e2e.hr.handler@example.com',
           password: 'password123',
         })
         .expect(201);
 
     hrHandlerToken =
-      hrHandlerLoginResponse.body.accessToken;
+      hrHandlerLoginResponse.body
+        .accessToken;
 
-    expect(hrHandlerToken).toBeTruthy();
+    expect(
+      hrHandlerToken,
+    ).toBeTruthy();
   });
 
   afterAll(async () => {
@@ -294,47 +350,60 @@ describe('Service Request E2E', () => {
   it(
     'should complete the employee-to-handler service request flow',
     async () => {
-      const createResponse = await request(
-        app.getHttpServer(),
-      )
-        .post('/service-requests')
-        .set(
-          'Authorization',
-          `Bearer ${employeeToken}`,
+      const createResponse =
+        await request(
+          app.getHttpServer(),
         )
-        .send({
-          title: 'Laptop Issue',
-          description:
-            'My laptop keeps shutting down and I cannot work.',
-          departmentId: 1,
-          category: 'hardware',
-          priority: 'high',
-        })
-        .expect(201);
+          .post(
+            '/service-requests',
+          )
+          .set(
+            'Authorization',
+            `Bearer ${employeeToken}`,
+          )
+          .send({
+            title: 'Laptop Issue',
+            description:
+              'My laptop keeps shutting down and I cannot work.',
+            departmentId: 1,
+            category: 'hardware',
+            priority: 'high',
+          })
+          .expect(201);
 
-      const requestId = createResponse.body.id;
-
-      expect(requestId).toBeTruthy();
-
-      expect(createResponse.body.employeeId).toBe(
-        101,
-      );
-
-      expect(createResponse.body.departmentId).toBe(
-        1,
-      );
+      const requestId =
+        createResponse.body.id;
 
       expect(
-        createResponse.body.handlerId,
+        requestId,
+      ).toBeTruthy();
+
+      expect(
+        createResponse.body
+          .employeeId,
+      ).toBe(101);
+
+      expect(
+        createResponse.body
+          .departmentId,
+      ).toBe(1);
+
+      expect(
+        createResponse.body
+          .handlerId,
       ).toBeNull();
 
-      expect(createResponse.body.status).toBe(
+      expect(
+        createResponse.body.status,
+      ).toBe(
         ServiceRequestStatus.SUBMITTED,
       );
 
       // Employee can see own request
       const employeeRequestDetails =
-        await request(app.getHttpServer())
+        await request(
+          app.getHttpServer(),
+        )
           .get(
             `/service-requests/${requestId}`,
           )
@@ -345,21 +414,23 @@ describe('Service Request E2E', () => {
           .expect(200);
 
       expect(
-        employeeRequestDetails.body.employeeId,
+        employeeRequestDetails.body
+          .employeeId,
       ).toBe(101);
 
       // Handler department inbox
-      const inboxResponse = await request(
-        app.getHttpServer(),
-      )
-        .get(
-          '/service-requests/handler/inbox',
+      const inboxResponse =
+        await request(
+          app.getHttpServer(),
         )
-        .set(
-          'Authorization',
-          `Bearer ${handlerToken}`,
-        )
-        .expect(200);
+          .get(
+            '/service-requests/handler/inbox',
+          )
+          .set(
+            'Authorization',
+            `Bearer ${handlerToken}`,
+          )
+          .expect(200);
 
       const inboxRequest =
         inboxResponse.body.find(
@@ -367,72 +438,105 @@ describe('Service Request E2E', () => {
             item.id === requestId,
         );
 
-      expect(inboxRequest).toBeDefined();
-      expect(inboxRequest.departmentId).toBe(1);
+      expect(
+        inboxRequest,
+      ).toBeDefined();
+
+      expect(
+        inboxRequest.departmentId,
+      ).toBe(1);
+
       expect(
         inboxRequest.handlerId,
       ).toBeNull();
 
       // Claim
-      const assignResponse = await request(
-        app.getHttpServer(),
-      )
-        .patch(
-          `/service-requests/${requestId}/assign`,
+      const assignResponse =
+        await request(
+          app.getHttpServer(),
         )
-        .set(
-          'Authorization',
-          `Bearer ${handlerToken}`,
-        )
-        .expect(200);
+          .patch(
+            `/service-requests/${requestId}/assign`,
+          )
+          .set(
+            'Authorization',
+            `Bearer ${handlerToken}`,
+          )
+          .expect(200);
 
       expect(
-        assignResponse.body.handlerId,
+        assignResponse.body
+          .handlerId,
       ).toBe(201);
 
       // submitted -> in_progress
-      const startResponse = await request(
-        app.getHttpServer(),
-      )
-        .patch(
-          `/service-requests/${requestId}/status`,
+      const startResponse =
+        await request(
+          app.getHttpServer(),
         )
-        .set(
-          'Authorization',
-          `Bearer ${handlerToken}`,
-        )
-        .send({
-          status:
-            ServiceRequestStatus.IN_PROGRESS,
-        })
-        .expect(200);
+          .patch(
+            `/service-requests/${requestId}/status`,
+          )
+          .set(
+            'Authorization',
+            `Bearer ${handlerToken}`,
+          )
+          .send({
+            status:
+              ServiceRequestStatus.IN_PROGRESS,
+          })
+          .expect(200);
 
-      expect(startResponse.body.status).toBe(
+      expect(
+        startResponse.body.status,
+      ).toBe(
         ServiceRequestStatus.IN_PROGRESS,
       );
 
       // in_progress -> completed
-      const completeResponse = await request(
-        app.getHttpServer(),
-      )
-        .patch(
-          `/service-requests/${requestId}/status`,
+      const completeResponse =
+        await request(
+          app.getHttpServer(),
         )
-        .set(
-          'Authorization',
-          `Bearer ${handlerToken}`,
-        )
-        .send({
-          status:
-            ServiceRequestStatus.COMPLETED,
-        })
-        .expect(200);
+          .patch(
+            `/service-requests/${requestId}/status`,
+          )
+          .set(
+            'Authorization',
+            `Bearer ${handlerToken}`,
+          )
+          .send({
+            status:
+              ServiceRequestStatus.COMPLETED,
+          })
+          .expect(200);
 
       expect(
         completeResponse.body.status,
       ).toBe(
         ServiceRequestStatus.COMPLETED,
       );
+
+      expect(
+        notificationsMock
+          .sendRequestCompletedEmail,
+      ).toHaveBeenCalledTimes(1);
+
+      expect(
+        notificationsMock
+          .sendRequestCompletedEmail,
+      ).toHaveBeenCalledWith({
+        employeeEmail:
+          'e2e.employee@example.com',
+
+        employeeName:
+          'E2E Employee',
+
+        requestId,
+
+        requestTitle:
+          'Laptop Issue',
+      });
 
       // Verify persisted request
       const persistedRequest =
@@ -442,14 +546,18 @@ describe('Service Request E2E', () => {
           },
         });
 
-      expect(persistedRequest).not.toBeNull();
+      expect(
+        persistedRequest,
+      ).not.toBeNull();
 
       expect(
-        persistedRequest?.employeeId,
+        persistedRequest
+          ?.employeeId,
       ).toBe(101);
 
       expect(
-        persistedRequest?.handlerId,
+        persistedRequest
+          ?.handlerId,
       ).toBe(201);
 
       expect(
@@ -460,17 +568,22 @@ describe('Service Request E2E', () => {
 
       // Verify audit history
       const history =
-        await prisma.serviceRequestStatusHistory.findMany({
-          where: {
-            serviceRequestId: requestId,
-          },
+        await prisma.serviceRequestStatusHistory.findMany(
+          {
+            where: {
+              serviceRequestId:
+                requestId,
+            },
 
-          orderBy: {
-            createdAt: 'asc',
+            orderBy: {
+              createdAt: 'asc',
+            },
           },
-        });
+        );
 
-      expect(history).toHaveLength(2);
+      expect(
+        history,
+      ).toHaveLength(2);
 
       expect(
         history[0].fromStatus,
@@ -485,7 +598,8 @@ describe('Service Request E2E', () => {
       );
 
       expect(
-        history[0].changedByUserId,
+        history[0]
+          .changedByUserId,
       ).toBe(201);
 
       expect(
@@ -501,7 +615,8 @@ describe('Service Request E2E', () => {
       );
 
       expect(
-        history[1].changedByUserId,
+        history[1]
+          .changedByUserId,
       ).toBe(201);
     },
   );
@@ -512,7 +627,9 @@ describe('Service Request E2E', () => {
       await request(
         app.getHttpServer(),
       )
-        .get('/service-requests/my')
+        .get(
+          '/service-requests/my',
+        )
         .expect(401);
     },
   );
@@ -540,13 +657,16 @@ describe('Service Request E2E', () => {
       await request(
         app.getHttpServer(),
       )
-        .post('/service-requests')
+        .post(
+          '/service-requests',
+        )
         .set(
           'Authorization',
           `Bearer ${handlerToken}`,
         )
         .send({
-          title: 'Unauthorized Request',
+          title:
+            'Unauthorized Request',
           description:
             'A handler should not create this request.',
           departmentId: 1,
@@ -577,17 +697,18 @@ describe('Service Request E2E', () => {
   it(
     'should allow the owner to view their own request',
     async () => {
-      const response = await request(
-        app.getHttpServer(),
-      )
-        .get(
-          `/service-requests/${otherEmployeeRequestId}`,
+      const response =
+        await request(
+          app.getHttpServer(),
         )
-        .set(
-          'Authorization',
-          `Bearer ${secondEmployeeToken}`,
-        )
-        .expect(200);
+          .get(
+            `/service-requests/${otherEmployeeRequestId}`,
+          )
+          .set(
+            'Authorization',
+            `Bearer ${secondEmployeeToken}`,
+          )
+          .expect(200);
 
       expect(
         response.body.employeeId,
@@ -615,17 +736,18 @@ describe('Service Request E2E', () => {
   it(
     'should allow an HR handler to view an HR request',
     async () => {
-      const response = await request(
-        app.getHttpServer(),
-      )
-        .get(
-          `/service-requests/${hrRequestId}`,
+      const response =
+        await request(
+          app.getHttpServer(),
         )
-        .set(
-          'Authorization',
-          `Bearer ${hrHandlerToken}`,
-        )
-        .expect(200);
+          .get(
+            `/service-requests/${hrRequestId}`,
+          )
+          .set(
+            'Authorization',
+            `Bearer ${hrHandlerToken}`,
+          )
+          .expect(200);
 
       expect(
         response.body.departmentId,
@@ -655,7 +777,8 @@ describe('Service Request E2E', () => {
       const persistedRequest =
         await prisma.serviceRequest.findUnique({
           where: {
-            id: assignedRequestId,
+            id:
+              assignedRequestId,
           },
         });
 
@@ -666,7 +789,8 @@ describe('Service Request E2E', () => {
       );
 
       expect(
-        persistedRequest?.handlerId,
+        persistedRequest
+          ?.handlerId,
       ).toBe(201);
     },
   );
@@ -677,7 +801,9 @@ describe('Service Request E2E', () => {
       await request(
         app.getHttpServer(),
       )
-        .get('/service-requests')
+        .get(
+          '/service-requests',
+        )
         .expect(404);
     },
   );

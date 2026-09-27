@@ -6,9 +6,10 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RequestIntakeModule } from './request-intake/request-intake.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
-  imports: [PrismaModule, ServiceRequestsModule, RequestIntakeModule, AuthModule, AdminModule],
+  imports: [PrismaModule, ServiceRequestsModule, RequestIntakeModule, AuthModule, AdminModule, NotificationsModule],
   controllers: [AppController],
   providers: [AppService],
 })
