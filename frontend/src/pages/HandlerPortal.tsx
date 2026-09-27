@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import {claimRequest,getHandlerInbox,updateRequestStatus,} from '../api/service-requests.api';
+import {claimRequest,getHandlerInbox,updateRequestStatus, getRequestDetails} from '../api/service-requests.api';
 import type { AuthUser } from '../types/auth.types';
-import type {ServiceRequest,ServiceRequestStatus,} from '../types/service-request.types';
+import type {ServiceRequest,ServiceRequestStatus, ServiceRequestDetails} from '../types/service-request.types';
+import RequestDetailsModal from '../components/RequestDetailsModal';
 import '../styles/portal.css';
 interface HandlerPortalProps {
   token: string;
@@ -14,14 +15,12 @@ function HandlerPortal({
   user,
   onLogout,
 }: HandlerPortalProps) {
-  const [requests, setRequests] =
-    useState<ServiceRequest[]>([]);
-  const [loading, setLoading] =
-    useState(true);
-  const [error, setError] =
-    useState<string | null>(null);
-  const [actionRequestId, setActionRequestId] =
-    useState<number | null>(null);
+  const [requests, setRequests] = useState<ServiceRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionRequestId, setActionRequestId] = useState<number | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<ServiceRequestDetails | null>(null);
+  const [loadingDetailsId, setloadingDetailsId] = useState<number | null>(null);
   async function loadInbox() {
     try {
       setLoading(true);
@@ -72,6 +71,20 @@ function HandlerPortal({
       setError(error instanceof Error ? error.message : 'Failed to update request',);
     } finally {
       setActionRequestId(null);
+    }
+  }
+  async function handleViewDetails(requestId: number) {
+    try {
+      setloadingDetailsId(requestId);
+      setError(null);
+      const details = await getRequestDetails(requestId, token);
+      setSelectedRequest(details);
+    }
+    catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to load request details')
+    }
+    finally {
+      setloadingDetailsId(null);
     }
   }
 
@@ -172,6 +185,9 @@ function HandlerPortal({
                   </div>
                 </div>
                 <div className="request-actions">
+                  <button type="button" className="secondary-button" onClick={() => handleViewDetails(serviceRequest.id)} disabled= {loadingDetailsId === serviceRequest.id}>
+                    {loadingDetailsId === serviceRequest.id ? 'Loading...' : 'View Details'}
+                  </button>
                   {isUnassigned && (
                     <button
                       className="primary-button"
@@ -230,6 +246,9 @@ function HandlerPortal({
             );
           })}
         </section>
+      )}
+      {selectedRequest && (
+        <RequestDetailsModal request={selectedRequest} onClose={() => setSelectedRequest(null)} />
       )}
     </main>
   );

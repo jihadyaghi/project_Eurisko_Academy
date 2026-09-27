@@ -49,10 +49,15 @@ export class ServiceRequestsController {
   findAll() {
     return this.serviceRequestsService.findAll();
   }
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.EMPLOYEE, UserRole.HANDLER)
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number,) {
-    return this.serviceRequestsService.findOne(id);
-  }
+  findOne(@Param('id', ParseIntPipe) id: number,@Req() request: any,) {
+  return this.serviceRequestsService.findRequestDetails(
+    id,
+    request.user,
+  );
+}
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.HANDLER)
   @Patch(':id/status')

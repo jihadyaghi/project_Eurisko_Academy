@@ -19,3 +19,28 @@ export interface CreateServiceRequestPayload {
     category: string;
     priority: string;
 }
+export interface RequestDepartment {
+    id: number;
+    name: string;
+}
+export interface RequestHandler {
+    id: number;
+    name: string;
+    email: string;
+}
+export interface StatusHistoryItem {
+    id: number;
+    fromStatus: string;
+    toStatus: string;
+    changedByUserId: number;
+    createdAt: string;
+    changedByUser: {
+        id: number;
+        name: string;
+    };
+}
+export interface ServiceRequestDetails extends ServiceRequest {
+    department: RequestDepartment;
+    handler: RequestHandler | null;
+    statusHistory: StatusHistoryItem[];
+}

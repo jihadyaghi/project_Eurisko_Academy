@@ -120,4 +120,49 @@ async findByEmployee(employeeId: number) {
     },
   });
 }
+async findRequestDetails(id: number, user: { id: number; role: string; departmentId: number | null;}) {
+  const request = await this.prisma.serviceRequest.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        department: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        handler: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        statusHistory: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+          include: {
+            changedByUser: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!request) {
+    throw new NotFoundException(`Service request with id ${id} not found`,);
+    }
+    if (user.role === 'EMPLOYEE' && request.employeeId !== user.id) {
+    throw new ForbiddenException('You can only view your own service requests',);
+    }
+  if (user.role === 'HANDLER' && request.departmentId !== user.departmentId ) {
+    throw new ForbiddenException('You can only view requests from your department',);
+  }
+  return request;
+}
 }

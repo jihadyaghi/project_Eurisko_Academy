@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { analyzeRequest } from '../api/request-intake.api';
-import {createServiceRequest,getMyRequests,} from '../api/service-requests.api';
+import {createServiceRequest,getMyRequests, getRequestDetails} from '../api/service-requests.api';
 import type { AuthUser } from '../types/auth.types';
 import type { IntakeResult } from '../types/request-intake.types';
-import type { ServiceRequest } from '../types/service-request.types';
+import  type {ServiceRequest, ServiceRequestDetails } from '../types/service-request.types';
+import RequestDetailsModal from '../components/RequestDetailsModal';
 import '../styles/portal.css';
 interface EmployeePortalProps {
   token: string;
@@ -28,6 +29,8 @@ function EmployeePortal({
   const [submitting, setSubmitting] = useState(false);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<ServiceRequestDetails | null>(null);
+  const [loadingDetailsId, setLoadingDetailsId] = useState<number | null>(null);
   async function loadMyRequests() {
     try {
       setLoadingRequests(true);
@@ -110,6 +113,20 @@ function EmployeePortal({
   }
   function formatDate(date: string) {
     return new Date(date).toLocaleString();
+  }
+  async function handleViewDetails(requestId: number) {
+    try {
+      setLoadingDetailsId(requestId);
+      setError(null);
+      const details = await getRequestDetails(requestId, token);
+      setSelectedRequest(details);
+    }
+    catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to load request details');
+    }
+    finally {
+      setLoadingDetailsId(null);
+    }
   }
   return (
     <main className="portal-page">
@@ -357,11 +374,19 @@ function EmployeePortal({
                     )}
                   </strong>
                 </div>
+                <div className="employee-request-actions">
+                  <button type="button" className="secondary-button" onClick={() => handleViewDetails(serviceRequest.id)} disabled={loadingDetailsId === serviceRequest.id} >
+                    {loadingDetailsId === serviceRequest.id ? 'Loading...' : 'View Details'} 
+                  </button>
+                </div>
               </article>
             ))}
           </div>
         )}
       </section>
+      {selectedRequest && (
+        <RequestDetailsModal request={selectedRequest} onClose={() => setSelectedRequest(null)} />
+      )}
     </main>
   );
 }

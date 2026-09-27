@@ -1,4 +1,4 @@
-import type {CreateServiceRequestPayload,ServiceRequest,ServiceRequestStatus,} from '../types/service-request.types';
+import type {CreateServiceRequestPayload,ServiceRequest,ServiceRequestStatus, ServiceRequestDetails} from '../types/service-request.types';
 const API_URL = 'http://localhost:3000';
 export async function createServiceRequest(
   payload: CreateServiceRequestPayload,
@@ -97,9 +97,26 @@ export async function getMyRequests(
   );
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(
-      error.message || 'Failed to load your requests',
-    );
+    throw new Error(error.message || 'Failed to load your requests',);
+  }
+  return response.json();
+}
+export async function getRequestDetails(
+  requestId: number,
+  token: string,
+): Promise<ServiceRequestDetails> {
+  const response = await fetch(
+    `${API_URL}/service-requests/${requestId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to load request details',);
   }
   return response.json();
 }
