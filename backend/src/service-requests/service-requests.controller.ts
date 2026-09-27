@@ -45,10 +45,6 @@ export class ServiceRequestsController {
     request.user.departmentId,
   );
   }
-  @Get()
-  findAll() {
-    return this.serviceRequestsService.findAll();
-  }
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.EMPLOYEE, UserRole.HANDLER)
   @Get(':id')

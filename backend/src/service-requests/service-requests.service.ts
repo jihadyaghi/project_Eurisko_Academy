@@ -29,9 +29,6 @@ export class ServiceRequestsService {
         });
         return request;
     }
-    findAll() {
-        return this.prisma.serviceRequest.findMany();
-    }
     async findOne(id: number) {
         const request = await this.prisma.serviceRequest.findUnique({
             where: { id },
