@@ -1,5 +1,5 @@
 import type { CreateUserPayload, ManagedUser } from "../types/admin.types";
-const API_URL = 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 export async function getUsers(token: string): Promise<ManagedUser[]> {
     const response = await fetch(`${API_URL}/admin/users`, {
         headers: {
