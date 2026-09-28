@@ -97,22 +97,8 @@ function LoginPage({
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-        <div className="demo-accounts">
-          <p>Demo accounts</p>
-          <small>
-            Employee:
-            {' '}
-            employee@example.com
-          </small>
-          <small>
-            Password:
-            {' '}
-            password123
-          </small>
-        </div>
       </section>
     </main>
   );
 }
-
 export default LoginPage;
