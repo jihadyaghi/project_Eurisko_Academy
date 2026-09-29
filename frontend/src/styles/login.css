@@ -159,3 +159,130 @@ body {
     font-size: 28px;
   }
 }
+.login-page {
+  position: relative;
+  overflow: hidden;
+}
+
+.login-background-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.login-orb-one {
+  width: 320px;
+  height: 320px;
+  top: -110px;
+  left: -90px;
+  background: rgba(124, 58, 237, 0.12);
+}
+
+.login-orb-two {
+  width: 300px;
+  height: 300px;
+  right: -80px;
+  bottom: -110px;
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow:
+    0 24px 70px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.login-brand-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      135deg,
+      #7c3aed,
+      #2563eb
+    );
+  color: #ffffff;
+  box-shadow:
+    0 10px 26px rgba(79, 70, 229, 0.24);
+}
+
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 46px;
+}
+
+.password-toggle-button {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  padding: 5px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  transform: translateY(-50%);
+}
+
+.password-toggle-button:hover {
+  color: #7c3aed;
+}
+
+.login-submit-button {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: login-spin 0.8s linear infinite;
+}
+
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.login-security-note {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.login-security-note svg {
+  color: #16a34a;
+}
+
+.login-footer-note {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 11px;
+}
