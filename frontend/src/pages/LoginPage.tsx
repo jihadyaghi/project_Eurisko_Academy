@@ -37,9 +37,6 @@ function LoginPage({onLogin,}: LoginPageProps) {
       <div className="login-background-orb login-orb-one" />
       <div className="login-background-orb login-orb-two" />
       <section className="login-card">
-        <div className="login-brand-icon">
-          <Sparkles size={24} />
-        </div>
         <div className="login-header">
           <span className="login-eyebrow">
             Internal Operations
