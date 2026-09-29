@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Eye,EyeOff,LockKeyhole,LogIn,ShieldCheck,Sparkles,} from 'lucide-react';
+import {Eye,EyeOff,LockKeyhole,LogIn,ShieldCheck} from 'lucide-react';
 import {login} from '../api/auth.api';
 import {saveAuth} from '../utils/auth-storage';
 import type {AuthUser} from '../types/auth.types';
