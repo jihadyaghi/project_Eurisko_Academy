@@ -1,6 +1,6 @@
 import {Building2,CalendarClock,CheckCircle2,Clock3,FileText,History,Tag,UserRound,X,} from 'lucide-react';
 import type {ServiceRequestDetails} from '../types/service-request.types';
-import '../styles/portal.css';
+import '../styles/request-modal.css';
 interface RequestDetailModalProps {
   request: ServiceRequestDetails;
   onClose: () => void;

@@ -4,7 +4,8 @@ import {
 import {createUser,getUsers,updateUserStatus} from '../api/admin.api';
 import type { AuthUser } from '../types/auth.types';
 import type {CreateUserPayload,ManagedUser,ManagedUserRole,} from '../types/admin.types';
-import '../styles/portal.css';
+import '../styles/admin.css';
+import '../styles/portal-base.css';
 interface AdminPortalProps {
   token: string;
   user: AuthUser;

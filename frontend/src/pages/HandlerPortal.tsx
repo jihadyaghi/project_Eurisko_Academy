@@ -4,7 +4,8 @@ import {claimRequest,getHandlerInbox,getRequestDetails,updateRequestStatus} from
 import type { AuthUser } from '../types/auth.types';
 import type {ServiceRequest,ServiceRequestDetails,ServiceRequestStatus,} from '../types/service-request.types';
 import RequestDetailsModal from '../components/RequestDetailsModal';
-import '../styles/portal.css';
+import '../styles/handler.css';
+import '../styles/portal-base.css';
 interface HandlerPortalProps {
   token: string;
   user: AuthUser;

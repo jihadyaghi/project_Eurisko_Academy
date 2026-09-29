@@ -6,7 +6,8 @@ import type { AuthUser } from '../types/auth.types';
 import type {IntakeResult} from '../types/request-intake.types';
 import type {ServiceRequest,ServiceRequestDetails} from '../types/service-request.types';
 import RequestDetailsModal from '../components/RequestDetailsModal';
-import '../styles/portal.css';
+import '../styles/employee.css';
+import '../styles/portal-base.css';
 interface EmployeePortalProps {
   token: string;
   user: AuthUser;
